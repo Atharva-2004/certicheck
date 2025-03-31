@@ -48,3 +48,49 @@
     --ring: 210 40% 98%;
   }
 }
+
+@layer components {
+  .auth-container {
+    @apply min-h-screen bg-gradient-to-r from-blue-600 to-purple-600 flex items-center justify-center p-4;
+  }
+
+  .auth-card {
+    @apply bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-8 rounded-lg shadow-xl w-full max-w-md;
+  }
+
+  .auth-title {
+    @apply text-2xl font-bold tracking-tight;
+  }
+
+  .auth-description {
+    @apply text-muted-foreground mt-2;
+  }
+
+  .form-group {
+    @apply space-y-2;
+  }
+
+  .form-label {
+    @apply text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70;
+  }
+
+  .form-input {
+    @apply flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background 
+    file:border-0 file:bg-transparent file:text-sm file:font-medium 
+    placeholder:text-muted-foreground 
+    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 
+    disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background 
+    transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 
+    disabled:pointer-events-none disabled:opacity-50 
+    bg-primary text-primary-foreground hover:bg-primary/90 
+    h-10 px-4 py-2;
+  }
+
+  .link {
+    @apply text-sm text-primary underline-offset-4 hover:underline;
+  }
+}

@@ -84,11 +84,21 @@ const LandingPage = () => {
   };
 
   const verifyDocument = async (section, docType) => {
+    if (!formData[section].document) {
+      alert('Please upload a document first');
+      return;
+    }
+
     const data = new FormData();
     data.append('image', formData[section].document);
     data.append('document_type', docType);
 
     try {
+      // Show loading state
+      setVerificationStatus(prev => ({
+        ...prev,
+        [section]: 'loading'
+      }));
       const response = await axios.post(
         'http://127.0.0.1:8000/api/v1/ocr/process-document',
         data,
@@ -101,17 +111,9 @@ const LandingPage = () => {
         }
       );
 
-
-      console.log('Important Data:', {
-        receivedData: response.data.important_data,
-        extracted_text: response.data.extracted_text,
-
-        formData: formData[section],
-        documentType: docType
-      });
-
       const { important_data } = response.data;
       let isVerified = false;
+
       switch (docType) {
         case 'Aadhaar Card':
           isVerified = 
@@ -171,64 +173,100 @@ const LandingPage = () => {
     }
 };
 
-  const renderFormSection = (section, title, fields, docType) => (
-    <Card className="p-6">
-      <h3 className="text-2xl font-semibold mb-4">{title}</h3>
-      <div className="space-y-4">
-        {fields.map(({ name, label, type = 'text', pattern }) => (
-          <div key={name}>
-            <Label htmlFor={`${section}-${name}`}>{label}</Label>
-            <Input
-              id={`${section}-${name}`}
-              type={type}
-              name={name}
-              value={formData[section][name]}
-              onChange={(e) => handleInputChange(section, e)}
-              pattern={pattern}
-              className="mt-1"
-              required
-            />
-          </div>
-        ))}
-        
-        <div>
-          <Label htmlFor={`${section}-document`}>Upload Document</Label>
-          <Input
-            id={`${section}-document`}
-            type="file"
-            onChange={(e) => handleFileChange(section, e)}
-            accept="image/*,.pdf"
-            className="mt-1"
-            required
-          />
+const renderFormSection = (section, title, fields, docType) => (
+  <Card className="form-card">
+    <div className="p-6">
+      <div className="flex justify-between items-center mb-6">
+        <h3 className="text-2xl font-semibold">{title}</h3>
+        <div className={`status-badge ${
+          verificationStatus[section] === true ? 'verified' : 'pending'
+        }`}>
+          {verificationStatus[section] === true ? 'Verified ✓' : 'Pending'}
         </div>
+      </div>
 
+      <div className="space-y-6">
+        {fields.map(({ name, label, type = 'text', pattern }) => (
+          <div key={name} className="space-y-2">
+            <Label 
+              htmlFor={`${section}-${name}`}
+              className="text-sm font-medium text-gray-700"
+            >
+              {label}
+            </Label>
+            <Input
+                id={`${section}-${name}`}
+                type={type}
+                name={name}
+                value={formData[section][name]}
+                onChange={(e) => handleInputChange(section, e)}
+                pattern={pattern}
+                className="w-full"
+                required
+              />
+            </div>
+          ))}
+
+        
+        <div className="file-upload-wrapper">
+            <Label 
+              htmlFor={`${section}-document`}
+              className="block text-sm font-medium text-gray-700 mb-2">Upload Document
+            </Label>
+            <div className="flex items-center justify-center">
+              <Input
+                id={`${section}-document`}
+                type="file"
+                onChange={(e) => handleFileChange(section, e)}
+                accept="image/*,.pdf"
+                className="hidden"
+                required
+              />
+              <Button 
+                type="button"
+                variant="outline"
+                onClick={() => document.getElementById(`${section}-document`).click()}
+              >
+                Choose File
+              </Button>
+            </div>
+            {formData[section].document && (
+              <p className="mt-2 text-sm text-gray-600">
+                Selected: {formData[section].document.name}
+              </p>
+            )}
+          </div>
         <Button
-          onClick={() => verifyDocument(section, docType)}
-          className={`w-full ${
-            verificationStatus[section] 
-              ? 'bg-green-500 hover:bg-green-600' 
-              : 'bg-blue-500 hover:bg-blue-600'
-          }`}
-        >
-          {verificationStatus[section] ? 'Verified ✓' : 'Verify'}
-        </Button>
+            onClick={() => verifyDocument(section, docType)}
+            className={`w-full verify-button ${
+              verificationStatus[section] === true ? 'bg-green-500' : ''
+            }`}
+            disabled={verificationStatus[section] === 'loading'}
+          >
+            {verificationStatus[section] === 'loading' ? 'Verifying...' :
+             verificationStatus[section] === true ? 'Verified ✓' : 'Verify Document'}
+          </Button>
+        </div>
       </div>
     </Card>
   );
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-4xl mx-auto">
-        <Tabs defaultValue="aadhar" className="w-full">
-          <TabsList className="grid grid-cols-6 gap-4 mb-6">
-            <TabsTrigger value="aadhar">Aadhar</TabsTrigger>
-            <TabsTrigger value="pan">PAN</TabsTrigger>
-            <TabsTrigger value="marksheet10">10th</TabsTrigger>
-            <TabsTrigger value="marksheet12">12th</TabsTrigger>
-            <TabsTrigger value="gate">GATE</TabsTrigger>
-            <TabsTrigger value="resume">Resume</TabsTrigger>
-          </TabsList>
+    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="max-w-4xl mx-auto tabs-container">
+      <h1 className="text-3xl font-bold text-center mb-8">
+        Document Verification Portal
+      </h1>
+
+      <Tabs defaultValue="aadhar" className="w-full">
+        <TabsList className="grid w-full grid-cols-6 gap-4">
+          <TabsTrigger value="aadhar">Aadhar</TabsTrigger>
+          <TabsTrigger value="pan">PAN</TabsTrigger>
+          <TabsTrigger value="marksheet10">10th</TabsTrigger>
+          <TabsTrigger value="marksheet12">12th</TabsTrigger>
+          <TabsTrigger value="gate">GATE</TabsTrigger>
+          <TabsTrigger value="resume">Resume</TabsTrigger>
+        </TabsList>
 
           <TabsContent value="aadhar">
             {renderFormSection('aadhar', 'Aadhar Card Details', [
