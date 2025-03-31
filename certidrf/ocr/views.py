@@ -85,7 +85,23 @@ def extract_important_details(doc_type, text):
         extracted_data["DOB"] = re.findall(r"(?:DOB|Date of Birth):\s*(\d{2}/\d{2}/\d{4})", text)
         extracted_data["Father's Name"] = next(iter(re.findall(r"Father's Name:\s*([A-Za-z ]+?)(?=\s*(Address|Aadhaar|Aadhar|Seat|DOB|Date|Mobile|$))", text)), "Not Found")
 
-    elif doc_type in ["10th Marksheet", "12th Marksheet"]:
+    elif doc_type == "10th Marksheet":
+        extracted_data["Name"] = next(iter(re.findall(r"Name:\s*([A-Za-z ]+?)(?=\s*(Address|Aadhaar|Aadhar|Seat|DOB|Date|Mobile|$))", text)), "Not Found")
+        extracted_data["Roll Number"] = re.findall(r"Seat(?: No\.?| Number)\s*:\s*([\w\d]+)", text)
+        extracted_data["Percentage"] = re.findall(r"Percentage:\s*([\d\.]+)", text)
+
+        # Important: Make sure to return a list for Board, not a single string
+        if "Maharashtra State Board of Secondary and Higher Secondary Education" or "Higher Secondary Certificate Examination in Maharashtra" in text:
+            extracted_data["Board"] = ["Maharashtra State Board of Secondary and Higher Secondary Education"]
+        elif "Central Board of Secondary Education" in text:
+            extracted_data["Board"] = ["Central Board of Secondary Education"]
+        elif "Council for the Indian School Certificate Examinations" in text:
+            extracted_data["Board"] = ["Council for the Indian School Certificate Examinations"]
+        else:
+            extracted_data["Board"] = []  # Empty list for "Not Found" case
+
+
+    elif doc_type == "12th Marksheet":
         extracted_data["Name"] = re.findall(r"Name:\s([A-Za-z ]+)", text)
         extracted_data["Roll Number"] = re.findall(r"Seat(?: No\.?| Number)\s*:\s*([\w\d]+)", text)
         extracted_data["Percentage"] = re.findall(r"Percentage:\s*([\d\.]+)", text)
