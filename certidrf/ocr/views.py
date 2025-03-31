@@ -41,7 +41,7 @@ def extract_text_from_image(image):
                             {"type": "text", "text": 
                             "Extract all readable text from this document while preserving the table or column structure. "
                             "If the document contains tabular data, format it clearly using commas or JSON-like format. "
-                            "Return important info in KEY-VALUE PAIRS :"
+                            "Return important info in KEY: VALUE PAIRS :"
                             "Name, Aadhar Number, DOB, Address, Mobile, PAN Number, Father's Name, Seat Number, Percentage, Divisional Board, Reg. No., GATE Score as keys"
                             "Do not classify it. Just return text as it appears, maintaining its structure."
                 }, {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}}
@@ -74,16 +74,16 @@ def extract_important_details(doc_type, text):
 
     if doc_type == "Aadhaar Card":
         extracted_data["Aadhaar Number"] = re.findall(r"\d{4}\s\d{4}\s\d{4}", text)
-        extracted_data["Name"] = next(iter(re.findall(r"Name:\s*([A-Za-z ]+?)(?=\s*(Address:|Aadhaar|DOB|Date|Mobile|$))", text)), "Not Found")
+        extracted_data["Name"] = next(iter(re.findall(r"Name:\s*([A-Za-z ]+?)(?=\s*(Address|Aadhaar|DOB|Date|Mobile|$))", text)), "Not Found")
         extracted_data["DOB"] = re.findall(r"(?:DOB|Date of Birth):\s*(\d{2}/\d{2}/\d{4})", text)
-        extracted_data["Address"] = next(iter(re.findall(r"Address:\s*(.+?)(?=\s*(Mobile:|Aadhaar Number:))", text)), "Not Found")
+        extracted_data["Address"] = next(iter(re.findall(r"Address:\s*(.+?)(?=\s*(Mobile|Aadhaar|Date|Aadhar|DOB|Seat))", text)), "Not Found")
         extracted_data["Mobile"] = re.findall(r"Mobile:\s*(\d{10})", text)
 
     elif doc_type == "PAN Card":
         extracted_data["PAN Number"] = re.findall(r"[A-Z]{5}\d{4}[A-Z]", text)
-        extracted_data["Name"] = re.findall(r"Name:\s*([A-Za-z ]+)", text) or re.findall(r"([A-Za-z]+ [A-Za-z]+ [A-Za-z]+)", text)
+        extracted_data["Name"] = next(iter(re.findall(r"Name:\s*([A-Za-z ]+?)(?=\s*(Address|Aadhaar|Aadhar|Seat|DOB|Date|Mobile|$))", text)), "Not Found")
         extracted_data["DOB"] = re.findall(r"(?:DOB|Date of Birth):\s*(\d{2}/\d{2}/\d{4})", text)
-        extracted_data["Father's Name"] = re.findall(r"Father(?:'s|’s)? Name:\s*([A-Za-z ]+)", text)
+        extracted_data["Father's Name"] = next(iter(re.findall(r"Father's Name:\s*([A-Za-z ]+?)(?=\s*(Address|Aadhaar|Aadhar|Seat|DOB|Date|Mobile|$))", text)), "Not Found")
 
     elif doc_type in ["10th Marksheet", "12th Marksheet"]:
         extracted_data["Name"] = re.findall(r"Name:\s([A-Za-z ]+)", text)
