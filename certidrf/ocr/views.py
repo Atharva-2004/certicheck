@@ -74,7 +74,7 @@ def extract_important_details(doc_type, text):
 
     if doc_type == "Aadhaar Card":
         extracted_data["Aadhaar Number"] = re.findall(r"\d{4}\s\d{4}\s\d{4}", text)
-        extracted_data["Name"] = re.findall(r"Name:\s([A-Za-z ]+)", text)
+        extracted_data["Name"] = next(iter(re.findall(r"Name:\s([A-Za-z ]+?)(?=\s(Address|Aadhaar|DOB|Date|Mobile|$))", text)), "Not Found")
         extracted_data["DOB"] = re.findall(r"(?:DOB|Date of Birth):\s*(\d{2}/\d{2}/\d{4})", text)
         extracted_data["Address"] = re.findall(r"Address:\s(.+)", text)
         extracted_data["Mobile"] = re.findall(r"Mobile:\s*(\d{10})", text)

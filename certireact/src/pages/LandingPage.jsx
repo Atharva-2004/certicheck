@@ -1,0 +1,293 @@
+import { useState } from 'react';
+import axios from 'axios';
+import { Card, CardContent } from "../components/ui/card";
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
+import { Label } from "../components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
+
+const LandingPage = () => {
+  const [verificationStatus, setVerificationStatus] = useState({
+    aadhar: false,
+    pan: false,
+    marksheet10: false,
+    marksheet12: false,
+    gate: false,
+    resume: false
+  });
+
+  const [formData, setFormData] = useState({
+    aadhar: {
+      fullName: '',
+      dateOfBirth: '',
+      address: '',
+      mobileNumber: '',
+      aadharNumber: '',
+      document: null
+    },
+    pan: {
+      fullName: '',
+      dateOfBirth: '',
+      fatherName: '',
+      panNumber: '',
+      document: null
+    },
+    marksheet10: {
+      fullName: '',
+      rollNumber: '',
+      percentage: '',
+      board: '',
+      document: null
+    },
+    marksheet12: {
+      fullName: '',
+      rollNumber: '',
+      percentage: '',
+      board: '',
+      document: null
+    },
+    gate: {
+      fullName: '',
+      registrationNumber: '',
+      gateScore: '',
+      air: '',
+      document: null
+    },
+    resume: {
+      fullName: '',
+      skills: '',
+      experience: '',
+      contactInfo: '',
+      document: null
+    }
+  });
+
+  const handleInputChange = (section, e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [section]: {
+        ...prev[section],
+        [name]: value
+      }
+    }));
+  };
+
+  const handleFileChange = (section, e) => {
+    setFormData(prev => ({
+      ...prev,
+      [section]: {
+        ...prev[section],
+        document: e.target.files[0]
+      }
+    }));
+  };
+
+  const verifyDocument = async (section, docType) => {
+    const data = new FormData();
+    data.append('image', formData[section].document);
+    data.append('document_type', docType);
+
+    try {
+      const response = await axios.post(
+        'http://127.0.0.1:8000/api/v1/ocr/process-document',
+        data,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+            'Accept': 'application/json',
+          },
+          withCredentials: true,
+        }
+      );
+
+
+      console.log('Important Data:', {
+        receivedData: response.data.important_data,
+        extracted_text: response.data.extracted_text,
+
+        formData: formData[section],
+        documentType: docType
+      });
+
+      const { important_data } = response.data;
+      let isVerified = false;
+      switch (docType) {
+        case 'Aadhaar Card':
+          isVerified = 
+            important_data.Name?.includes(formData[section].fullName) &&
+            important_data['Aadhaar Number']?.replace(/\s/g, '').includes(formData[section].aadharNumber) ;
+          // important_data.DOB?.includes(formData[section].dateOfBirth)
+          break;
+
+        case 'PAN Card':
+          isVerified = 
+            important_data.Name?.toLowerCase().includes(formData[section].fullName.toLowerCase()) &&
+            important_data['PAN Number']?.includes(formData[section].panNumber);
+          break;
+
+        case '10th Marksheet':
+        case '12th Marksheet':
+          isVerified = 
+            important_data.Name?.toLowerCase().includes(formData[section].fullName.toLowerCase()) &&
+            important_data['Roll Number']?.includes(formData[section].rollNumber) &&
+            important_data.Percentage?.includes(formData[section].percentage);
+          break;
+
+        case 'GATE Scorecard':
+          isVerified = 
+            important_data.Name?.toLowerCase().includes(formData[section].fullName.toLowerCase()) &&
+            important_data['Registration Number']?.includes(formData[section].registrationNumber) &&
+            important_data['GATE Score']?.includes(formData[section].gateScore);
+          break;
+
+        case 'Resume':
+          isVerified = 
+            important_data.Name?.toLowerCase().includes(formData[section].fullName.toLowerCase()) &&
+            important_data['Skills']?.toLowerCase().includes(formData[section].skills.toLowerCase());
+          break;
+      }
+
+      setVerificationStatus(prev => ({
+        ...prev,
+        [section]: isVerified
+      }));
+
+      alert(isVerified ? 'Document Verified Successfully!' : 'Verification Failed: Information Mismatch');
+    } catch (error) {
+      console.error('Error Details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
+      
+      if (error.response?.status === 400) {
+        alert('Invalid request: Please check your form data');
+      } else if (error.response?.status === 401) {
+        alert('Unauthorized: Please log in');
+      } else {
+        alert(`Error: ${error.message}`);
+      }
+    }
+};
+
+  const renderFormSection = (section, title, fields, docType) => (
+    <Card className="p-6">
+      <h3 className="text-2xl font-semibold mb-4">{title}</h3>
+      <div className="space-y-4">
+        {fields.map(({ name, label, type = 'text', pattern }) => (
+          <div key={name}>
+            <Label htmlFor={`${section}-${name}`}>{label}</Label>
+            <Input
+              id={`${section}-${name}`}
+              type={type}
+              name={name}
+              value={formData[section][name]}
+              onChange={(e) => handleInputChange(section, e)}
+              pattern={pattern}
+              className="mt-1"
+              required
+            />
+          </div>
+        ))}
+        
+        <div>
+          <Label htmlFor={`${section}-document`}>Upload Document</Label>
+          <Input
+            id={`${section}-document`}
+            type="file"
+            onChange={(e) => handleFileChange(section, e)}
+            accept="image/*,.pdf"
+            className="mt-1"
+            required
+          />
+        </div>
+
+        <Button
+          onClick={() => verifyDocument(section, docType)}
+          className={`w-full ${
+            verificationStatus[section] 
+              ? 'bg-green-500 hover:bg-green-600' 
+              : 'bg-blue-500 hover:bg-blue-600'
+          }`}
+        >
+          {verificationStatus[section] ? 'Verified ✓' : 'Verify'}
+        </Button>
+      </div>
+    </Card>
+  );
+
+  return (
+    <div className="min-h-screen bg-background p-6">
+      <div className="max-w-4xl mx-auto">
+        <Tabs defaultValue="aadhar" className="w-full">
+          <TabsList className="grid grid-cols-6 gap-4 mb-6">
+            <TabsTrigger value="aadhar">Aadhar</TabsTrigger>
+            <TabsTrigger value="pan">PAN</TabsTrigger>
+            <TabsTrigger value="marksheet10">10th</TabsTrigger>
+            <TabsTrigger value="marksheet12">12th</TabsTrigger>
+            <TabsTrigger value="gate">GATE</TabsTrigger>
+            <TabsTrigger value="resume">Resume</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="aadhar">
+            {renderFormSection('aadhar', 'Aadhar Card Details', [
+              { name: 'fullName', label: 'Full Name' },
+              { name: 'dateOfBirth', label: 'Date of Birth', type: 'date' },
+              { name: 'address', label: 'Address' },
+              { name: 'mobileNumber', label: 'Mobile Number', pattern: '[0-9]{10}' },
+              { name: 'aadharNumber', label: 'Aadhar Number', pattern: '[0-9]{12}' }
+            ], 'Aadhaar Card')}
+          </TabsContent>
+
+          <TabsContent value="pan">
+            {renderFormSection('pan', 'PAN Card Details', [
+              { name: 'fullName', label: 'Full Name' },
+              { name: 'dateOfBirth', label: 'Date of Birth', type: 'date' },
+              { name: 'fatherName', label: "Father's Name" },
+              { name: 'panNumber', label: 'PAN Number', pattern: '[A-Z]{5}[0-9]{4}[A-Z]{1}' }
+            ], 'PAN Card')}
+          </TabsContent>
+
+          <TabsContent value="marksheet10">
+            {renderFormSection('marksheet10', '10th Marksheet Details', [
+              { name: 'fullName', label: 'Full Name' },
+              { name: 'rollNumber', label: 'Roll Number' },
+              { name: 'percentage', label: 'Percentage' },
+              { name: 'board', label: 'Board Name' }
+            ], '10th Marksheet')}
+          </TabsContent>
+
+          <TabsContent value="marksheet12">
+            {renderFormSection('marksheet12', '12th Marksheet Details', [
+              { name: 'fullName', label: 'Full Name' },
+              { name: 'rollNumber', label: 'Roll Number' },
+              { name: 'percentage', label: 'Percentage' },
+              { name: 'board', label: 'Board Name' }
+            ], '12th Marksheet')}
+          </TabsContent>
+
+          <TabsContent value="gate">
+            {renderFormSection('gate', 'GATE Scorecard Details', [
+              { name: 'fullName', label: 'Full Name' },
+              { name: 'registrationNumber', label: 'Registration Number' },
+              { name: 'gateScore', label: 'GATE Score' },
+              { name: 'air', label: 'AIR' }
+            ], 'GATE Scorecard')}
+          </TabsContent>
+
+          <TabsContent value="resume">
+            {renderFormSection('resume', 'Resume Details', [
+              { name: 'fullName', label: 'Full Name' },
+              { name: 'skills', label: 'Skills' },
+              { name: 'experience', label: 'Experience' },
+              { name: 'contactInfo', label: 'Contact Information' }
+            ], 'Resume')}
+          </TabsContent>
+        </Tabs>
+      </div>
+    </div>
+  );
+};
+
+export default LandingPage;
