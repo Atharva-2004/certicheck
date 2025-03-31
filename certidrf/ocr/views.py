@@ -102,7 +102,13 @@ def extract_important_details(doc_type, text):
 
 
     elif doc_type == "12th Marksheet":
-        extracted_data["Name"] = re.findall(r"Name:\s([A-Za-z ]+)", text)
+        extracted_data["Name"] = re.findall(r"Name:\s*([\w\s]+)", text)
+        name = extracted_data["Name"][0].strip()
+        print(type(extracted_data["Name"]))
+        print(extracted_data["Name"])
+        print(extracted_data["Name"][0].strip())
+        extracted_data["Name"] = name
+        # name = name.group(1).strip()
         extracted_data["Roll Number"] = re.findall(r"Seat(?: No\.?| Number)\s*:\s*([\w\d]+)", text)
         extracted_data["Percentage"] = re.findall(r"Percentage:\s*([\d\.]+)", text)
 
@@ -134,7 +140,7 @@ def extract_important_details(doc_type, text):
         extracted_data["University"] = re.findall(r"University:\s([A-Za-z ]+)", text)
         extracted_data["Year of Passing"] = re.findall(r"Year:\s(\d{4})", text)
 
-    return {key: value[0] if value else "Not Found" for key, value in extracted_data.items()}
+    return {key: value if isinstance(value, str) else (value[0] if value else "Not Found") for key, value in extracted_data.items()}
 
 # ✅ API to process document and verify type
 @api_view(['POST'])
