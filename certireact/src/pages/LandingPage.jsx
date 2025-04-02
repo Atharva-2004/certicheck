@@ -5,6 +5,18 @@ import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
+import { 
+  FaIdCard, 
+  FaAddressCard, 
+  FaGraduationCap, 
+  FaUserGraduate, 
+  FaAward, 
+  FaFileAlt 
+} from "react-icons/fa";
+import { Progress } from "../components/ui/progress";
+import './tabs.css'; // Add this import
+
+
 
 const LandingPage = () => {
   const [verificationStatus, setVerificationStatus] = useState({
@@ -61,6 +73,30 @@ const LandingPage = () => {
       document: null
     }
   });
+
+  const calculateProgress = () => {
+    const totalDocuments = 6; // Total number of documents
+    const verifiedCount = Object.values(verificationStatus).filter(status => status === true).length;
+    return (verifiedCount / totalDocuments) * 100;
+  };
+  
+  const canAccessTab = (tabName) => {
+    const tabOrder = ['aadhar', 'pan', 'marksheet10', 'marksheet12', 'gate', 'resume'];
+    const currentIndex = tabOrder.indexOf(tabName);
+    
+    if (currentIndex === 0) return true;
+    
+    return verificationStatus[tabOrder[currentIndex - 1]] === true;
+  };
+
+  const tabIcons = {
+    aadhar: <FaIdCard className="w-4 h-4" />,
+    pan: <FaAddressCard className="w-4 h-4" />,
+    marksheet10: <FaGraduationCap className="w-4 h-4" />,
+    marksheet12: <FaUserGraduate className="w-4 h-4" />,
+    gate: <FaAward className="w-4 h-4" />,
+    resume: <FaFileAlt className="w-4 h-4" />
+  };
 
   const handleInputChange = (section, e) => {
     const { name, value } = e.target;
@@ -252,22 +288,46 @@ const renderFormSection = (section, title, fields, docType) => (
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-    <div className="max-w-4xl mx-auto tabs-container">
-      <h1 className="text-3xl font-bold text-center mb-8">
+    <div className="min-h-screen bg-gray-50 p-6 ">
+    <div className="max-w-full mx-auto bg-white rounded-lg shadow-lg p-6 ">
+      <h1 className="text-3xl font-bold text-center mb-8 ">
         Document Verification Portal
       </h1>
 
-      <Tabs defaultValue="aadhar" className="w-full">
-        <TabsList className="grid w-full grid-cols-6 gap-4">
-          <TabsTrigger value="aadhar">Aadhar</TabsTrigger>
-          <TabsTrigger value="pan">PAN</TabsTrigger>
-          <TabsTrigger value="marksheet10">10th</TabsTrigger>
-          <TabsTrigger value="marksheet12">12th</TabsTrigger>
-          <TabsTrigger value="gate">GATE</TabsTrigger>
-          <TabsTrigger value="resume">Resume</TabsTrigger>
-        </TabsList>
+      <div className="space-y-8 ">
+        {/* Tabs Section */}
+        <Tabs defaultValue="aadhar" className="w-full ">
+          <TabsList className="w-full justify-between bg-gray-100 p-1">
+            {Object.entries(tabIcons).map(([key, icon]) => (
+              <TabsTrigger 
+                key={key} 
+                value={key}
+                disabled={!canAccessTab(key)}
+                className={`flex items-center gap-2 px-4 py-2 ${
+                  verificationStatus[key] && 'bg-green-500 text-white'
+                }`}
+              >
+                {icon}
+                <span className="hidden md:inline">
+                  {key.charAt(0).toUpperCase() + key.slice(1)}
+                </span>
+                {verificationStatus[key] && <span>✓</span>}
+              </TabsTrigger>
+            ))}
+          </TabsList>
 
+          <div className="mt-8 mb-8 border-t border-b py-6">
+  <div className="w-full bg-slate-100 p-4 rounded-lg">
+    <Progress 
+      value={calculateProgress()}
+      className="w-full h-3 bg-gray-200"
+    />
+    <p className="text-sm text-gray-600 mt-2 text-center">
+      {Math.round(calculateProgress())}% Complete
+    </p>
+  </div>
+</div>
+          {/* Form Sections */}
           <TabsContent value="aadhar">
             {renderFormSection('aadhar', 'Aadhar Card Details', [
               { name: 'fullName', label: 'Full Name' },
@@ -322,7 +382,9 @@ const renderFormSection = (section, title, fields, docType) => (
               { name: 'contactInfo', label: 'Contact Information' }
             ], 'Resume')}
           </TabsContent>
+          
         </Tabs>
+      </div>
       </div>
     </div>
   );
