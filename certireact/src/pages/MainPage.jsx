@@ -89,16 +89,32 @@ const MainPage = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post('http://127.0.0.1:8000/api/v1/auth/login', loginData);
-      if (response.data.access) {
-        localStorage.setItem('token', response.data.access);
-        setIsModalOpen(false);
-        navigate('/dashboard');
-      }
+        const response = await axios.post('http://127.0.0.1:8000/api/v1/auth/login', loginData);
+        if (response.data.access) {
+            const token = response.data.access;
+            localStorage.setItem('token', token);
+
+            // Fetch user details using the token
+            const userResponse = await axios.get('http://127.0.0.1:8000/api/v1/auth/user', {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
+
+            const userRole = userResponse.data.role; // Assuming the backend returns the role in the response
+
+            if (userRole === 'applicant') {
+                setIsModalOpen(false);
+                navigate('/dashboard');
+            } else if (userRole === 'recruiter'){
+              setIsModalOpen(false);
+              navigate('/recruiter-dashboard');
+            }
+        }
     } catch (error) {
-      alert(error.response?.data?.detail || 'Login failed');
+        alert(error.response?.data?.detail || 'Login failed');
     }
-  };
+};
 
   const handleRoleChange = (e) => {
     const selectedRole = e.target.value;

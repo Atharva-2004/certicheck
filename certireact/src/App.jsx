@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import MainPage from './pages/MainPage';
 import LandingPage from './pages/LandingPage';
+import RecruiterDashboard from './pages/recruiterdashboard';
 
 function App() {
   return (
@@ -11,6 +12,12 @@ function App() {
         <Route path="/dashboard" element={
           <ProtectedRoute>
             <LandingPage />
+          </ProtectedRoute>
+        } />
+
+          <Route path="/recruiter-dashboard" element={
+          <ProtectedRoute>
+            <RecruiterDashboard />
           </ProtectedRoute>
         } />
         <Route path="*" element={<Navigate to="/" />} />
