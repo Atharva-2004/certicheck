@@ -12,15 +12,19 @@
 }
 
 .modal {
-  background: white;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
   padding: 2rem;
-  border-radius: 8px;
+  border-radius: 12px;
   width: 90%;
   max-width: 500px;
   position: relative;
   max-height: 90vh;
   overflow-y: auto;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
 }
+
 
 .modal-close {
   position: absolute;
@@ -38,6 +42,8 @@
 
 .form-group label {
   display: block;
+  color: #1a1a1a;
+
   margin-bottom: 0.5rem;
   font-weight: 500;
 }
@@ -64,10 +70,14 @@
 .button-primary {
   background-color: #2563eb;
   color: white;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+
 }
 
 .button-primary:hover {
   background-color: #1d4ed8;
+  background: linear-gradient(135deg, #1d4ed8, #1e40af);
+
 }
 
 .toggle-form {
@@ -138,4 +148,51 @@
   padding: 0.5rem 0;
   border-top: 1px solid #e5e7eb;
   border-bottom: 1px solid #e5e7eb;
+}
+/* ...existing modal styles... */
+
+/* New styles for job listings */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.sticky {
+  position: sticky;
+  top: 1.5rem;
+}
+
+@media (max-width: 1024px) {
+  .container {
+    max-width: 100%;
+    padding: 0 1rem;
+  }
+  
+  .sticky {
+    position: static;
+  }
+}
+
+/* Animation for job cards */
+.job-card {
+  transition: all 0.3s ease;
+}
+
+.job-card:hover {
+  transform: translateY(-2px);
+}
+
+/* Button styles */
+.button-primary {
+  background-color: #2563eb;
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.375rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.button-primary:hover {
+  background-color: #1d4ed8;
+  transform: translateY(-1px);
 }
