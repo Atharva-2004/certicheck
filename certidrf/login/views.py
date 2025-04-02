@@ -11,6 +11,19 @@ User = get_user_model()
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+def get_user_details(request):
+    """Return the authenticated user's details."""
+    user = request.user
+    return Response({
+        "id": user.id,
+        "username": user.username,
+        "role": user.role,  # Assuming the User model has a `role` field
+        "firstname": user.firstname,  # Assuming the User model has a `firstname` field
+        "email": user.email
+    }, status=status.HTTP_200_OK)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def get_users(request):
     """Return list of users (restricted to authenticated users only)."""
     users = User.objects.all()
