@@ -5,14 +5,20 @@ User = get_user_model()
 
 class Job(models.Model):
     recruiter = models.ForeignKey(User, on_delete=models.CASCADE)
-    title = models.CharField(max_length=255)
+    adNo = models.CharField(max_length=20, unique=True)  # Job Advertisement Number
+    companyName = models.CharField(max_length=255)
+    jobTitle = models.CharField(max_length=255)
+    publishDate = models.DateField(auto_now_add=True)  # Auto-set when created
+    closeDate = models.DateField(default='2050-12-12')  # Recruiter sets this
     description = models.TextField()
     location = models.CharField(max_length=255)
-    required_documents = models.JSONField(default=dict)  # Defines required documents & fields
+    salary = models.CharField(max_length=50)  # Supports salary ranges like "18-25 LPA"
+    required_documents = models.JSONField(default=dict)  # Defines required docs & fields
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return self.title
+        return f"{self.adNo} - {self.jobTitle}"
+
 
 class JobApplication(models.Model):
     job = models.ForeignKey(Job, on_delete=models.CASCADE)
