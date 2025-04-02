@@ -32,6 +32,9 @@ TOGETHER_API_KEY=env('TOGETHER_API_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
+
+AUTH_USER_MODEL = 'login.User'  # Replace 'login' with your app name
+
 ALLOWED_HOSTS = []
 
 
