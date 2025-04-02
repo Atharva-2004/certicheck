@@ -1,14 +1,30 @@
 from django.db import models
-from django.contrib.auth.hashers import check_password, make_password
+from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from django.core.validators import RegexValidator
 
-class User(models.Model):
+class UserManager(BaseUserManager):
+    def create_user(self, username, email, password=None, **extra_fields):
+        """Create and return a regular user."""
+        if not email:
+            raise ValueError('The Email field is required.')
+        email = self.normalize_email(email)
+        user = self.model(username=username, email=email, **extra_fields)
+        user.set_password(password)  # Hashes the password
+        user.save(using=self._db)
+        return user
+
+    def create_superuser(self, username, email, password=None, **extra_fields):
+        """Create and return a superuser."""
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+        return self.create_user(username, email, password, **extra_fields)
+
+class User(AbstractBaseUser):  # Inherit from AbstractBaseUser
     firstname = models.CharField(max_length=60)
-    middlename = models.CharField(max_length=60)
+    middlename = models.CharField(max_length=60, blank=True, null=True)
     lastname = models.CharField(max_length=60)
     username = models.CharField(max_length=60, unique=True)
-    email = models.EmailField(unique=True)  
-    password = models.CharField(max_length=255)   
+    email = models.EmailField(unique=True)
     gender = models.CharField(max_length=60)
     phone_regex = RegexValidator(
         regex=r'^\+?1?\d{9,15}$',
@@ -19,16 +35,14 @@ class User(models.Model):
     organization = models.CharField(max_length=100, blank=True, null=True)
     organization_email = models.EmailField(blank=True, null=True)
     createdAt = models.DateField(auto_now_add=True)
+    
+    is_active = models.BooleanField(default=True)
+    is_staff = models.BooleanField(default=False)
 
-    REQUIRED_FIELDS = ['firstname','lastname','username', 'email', 'password', 'role', 'phone_number']
+    USERNAME_FIELD = 'username'
+    REQUIRED_FIELDS = ['firstname', 'lastname', 'email', 'phone_number', 'role']
 
+    objects = UserManager()  # Custom Manager
 
-    def save(self, *args, **kwargs):
-        """Ensure password is always hashed before saving"""
-        if not self.password.startswith('pbkdf2_sha256$'):  # Avoid double hashing
-            self.password = make_password(self.password)
-        super().save(*args, **kwargs)
-
-    def check_password(self, raw_password):
-        """Validate password"""
-        return check_password(raw_password, self.password)
+    def __str__(self):
+        return self.username
