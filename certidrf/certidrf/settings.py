@@ -51,7 +51,8 @@ INSTALLED_APPS = [
     'login',
     'rest_framework_simplejwt',
     'corsheaders',
-    'ocr'
+    'ocr',
+    'jobs'
 ]
 
 REST_FRAMEWORK = {
