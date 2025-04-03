@@ -123,10 +123,14 @@ def extract_important_details(doc_type, text):
             extracted_data["Board"] = []  # Empty list for "Not Found" case
 
     elif doc_type == "GATE Scorecard":
-        extracted_data["Name"] = re.findall(r"Candidate Name:\s([A-Za-z ]+)", text)
-        extracted_data["Registration Number"] = re.findall(r"Reg. No:\s(\w+)", text)
+        extracted_data["Name"] = re.findall(r"Name:\s([A-Za-z ]+)", text)
+        print(extracted_data["Name"])
+        if extracted_data["Name"]:
+            extracted_data["Name"] = [name.strip() for name in extracted_data["Name"]]
+        print(extracted_data["Name"])
+        extracted_data["Registration Number"] = re.findall(r"(?:Registration Number|Reg\. No\.|No\.)\s*:\s*(\w+)", text)
         extracted_data["GATE Score"] = re.findall(r"GATE Score:\s(\d+)", text)
-        extracted_data["AIR"] = re.findall(r"AIR:\s(\d+)", text)
+        extracted_data["AIR"] = re.findall(r"(?:In the test paper|All India Rank|AIR):?\s*(\d+)", text)
 
     elif doc_type == "Resume":
         extracted_data["Name"] = re.findall(r"Name:\s([A-Za-z ]+)", text)
