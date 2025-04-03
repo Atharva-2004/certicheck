@@ -111,6 +111,8 @@ def extract_important_details(doc_type, text):
         # name = name.group(1).strip()
         extracted_data["Roll Number"] = re.findall(r"Seat(?: No\.?| Number)\s*:\s*([\w\d]+)", text)
         extracted_data["Percentage"] = re.findall(r"Percentage:\s*([\d\.]+)", text)
+        extracted_data["Exam Month-Year"] = re.findall(r"Month and Year of Exam:\s*([A-Za-z]+-\d{2})", text)
+
 
         # Important: Make sure to return a list for Board, not a single string
         if "Maharashtra State Board of Secondary and Higher Secondary Education" or "Higher Secondary Certificate Examination in Maharashtra" in text:

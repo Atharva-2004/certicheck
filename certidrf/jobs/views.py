@@ -27,6 +27,21 @@ def list_jobs(request):
     serializer = JobSerializer(jobs, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def list_applied_jobs(request):
+    """List all jobs the authenticated applicant has applied to."""
+    if request.user.role != 'applicant':
+        return Response({'error': 'Only applicants can view their applied jobs.'}, status=status.HTTP_403_FORBIDDEN)
+
+    # Filter JobApplication by the current user
+    applications = JobApplication.objects.filter(applicant=request.user)
+    applied_jobs = [application.job for application in applications]
+
+    # Serialize the job data
+    serializer = JobSerializer(applied_jobs, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
 # 🔍 Retrieve a specific job
 @api_view(["GET"])
 def retrieve_job(request, job_id):

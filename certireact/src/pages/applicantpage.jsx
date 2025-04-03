@@ -46,7 +46,7 @@ const ApplicantPage = () => {
     const fetchAppliedJobs = async () => {
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.get('http://127.0.0.1:8000/api/v1/jobs/applied', {
+            const response = await axios.get('http://127.0.0.1:8000/api/v1/jobs/applied-jobs', {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setAppliedJobs(response.data);
