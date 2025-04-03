@@ -269,12 +269,24 @@ const LandingPage = () => {
             important_data.Percentage?.includes(formData[section].percentage);
           break;
 
-        case 'GATE Scorecard':
-          isVerified = 
-            important_data.Name?.toLowerCase().includes(formData[section].fullName.toLowerCase()) &&
-            important_data['Registration Number']?.includes(formData[section].registrationNumber) &&
-            important_data['GATE Score']?.includes(formData[section].gateScore);
-          break;
+          case 'GATE Scorecard':
+            console.log('Comparing GATE Details:', {
+                providedName: formData[section].fullName.toLowerCase(),
+                extractedName: important_data.Name?.toLowerCase(),
+                providedRegNo: formData[section].registrationNumber,
+                extractedRegNo: important_data['Registration Number'],
+                providedScore: formData[section].gateScore,
+                extractedScore: important_data['GATE Score']
+            });
+        
+            isVerified = 
+                important_data.Name?.toLowerCase().includes(formData[section].fullName.toLowerCase()) &&
+                String(important_data['Registration Number'])?.includes(String(formData[section].registrationNumber)) &&
+                String(important_data['GATE Score'])?.includes(String(formData[section].gateScore));
+        
+            // Log verification result
+            console.log('GATE Verification Result:', isVerified);
+            break;
 
           case 'Resume':
             // Make verification always successful if document is uploaded
