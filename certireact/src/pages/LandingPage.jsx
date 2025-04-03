@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState,useEffect } from 'react';
 import axios from 'axios';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Card, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
@@ -16,19 +17,41 @@ import {
 import { Progress } from "../components/ui/progress";
 import './tabs.css'; // Add this import
 
+const getStorageKey = (userId, jobId) => `application_${userId}_${jobId}`;
 
+const saveToLocalStorage = (userId, jobId, data) => {
+  if (userId && jobId) {
+    localStorage.setItem(getStorageKey(userId, jobId), JSON.stringify(data));
+  }
+};
+
+const getFromLocalStorage = (userId, jobId) => {
+  if (!userId || !jobId) return null;
+  const data = localStorage.getItem(getStorageKey(userId, jobId));
+  return data ? JSON.parse(data) : null;
+};
 
 const LandingPage = () => {
-  const [verificationStatus, setVerificationStatus] = useState({
-    aadhar: false,
-    pan: false,
-    marksheet10: false,
-    marksheet12: false,
-    gate: false,
-    resume: false
-  });
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { jobId, userId } = location.state || {};
+  const savedData = getFromLocalStorage(userId, jobId);
 
-  const [formData, setFormData] = useState({
+  const [verificationStatus, setVerificationStatus] = useState(
+    savedData?.verificationStatus || {
+      aadhar: false,
+      pan: false,
+      marksheet10: false,
+      marksheet12: false,
+      gate: false,
+      resume: false
+    }
+  );
+
+
+
+  const [formData, setFormData] = useState(
+    savedData?.formData || {
     aadhar: {
       fullName: '',
       dateOfBirth: '',
@@ -74,11 +97,23 @@ const LandingPage = () => {
     }
   });
 
+  useEffect(() => {
+    if (userId && jobId) {
+      saveToLocalStorage(userId, jobId, {
+        verificationStatus,
+        formData
+      });
+    }
+  }, [verificationStatus, formData, userId, jobId]);
+
   const calculateProgress = () => {
-    const totalDocuments = 6; // Total number of documents
-    const verifiedCount = Object.values(verificationStatus).filter(status => status === true).length;
-    return (verifiedCount / totalDocuments) * 100;
-  };
+    const requiredDocuments = 5; // Reduced from 6 to 5 (excluding resume)
+    const verifiedCount = Object.entries(verificationStatus)
+      .filter(([key]) => key !== 'resume') // Exclude resume from count
+      .filter(([_, status]) => status === true)
+      .length;
+    return (verifiedCount / requiredDocuments) * 100;
+};
   
   const canAccessTab = (tabName) => {
     const tabOrder = ['aadhar', 'pan', 'marksheet10', 'marksheet12', 'gate', 'resume'];
@@ -109,6 +144,52 @@ const LandingPage = () => {
     }));
   };
 
+  const handleSubmitApplication = async () => {
+    try {
+        const token = localStorage.getItem('token');
+        
+        // Create FormData object to handle file uploads
+        const formDataToSend = new FormData();
+        
+        // Add all documents
+        Object.keys(formData).forEach(docType => {
+            if (formData[docType].document) {
+                formDataToSend.append(docType, formData[docType].document);
+            }
+        });
+
+        const applicationData = {
+          fullName: formData.aadhar.fullName,
+          dateOfBirth: formData.aadhar.dateOfBirth,
+          mobileNumber: formData.aadhar.mobileNumber,
+          skills: formData.resume.skills,
+          experience: formData.resume.experience
+      };
+
+      formDataToSend.append('data', JSON.stringify(applicationData));
+
+      const response = await axios.post(
+          `http://127.0.0.1:8000/api/v1/jobs/${jobId}/apply`,
+          formDataToSend,
+          {
+              headers: {
+                  'Authorization': `Bearer ${token}`,
+                  'Content-Type': 'multipart/form-data'
+              }
+          }
+      );
+      if (response.status === 201) {
+        // Clear stored data after successful submission
+        localStorage.removeItem(getStorageKey(userId, jobId));
+        alert('Application submitted successfully!');
+        navigate('/dashboard');
+      
+    }
+} catch (error) {
+    console.error('Error submitting application:', error);
+    alert('Error submitting application. Please try again.');
+}
+};
   const handleFileChange = (section, e) => {
     setFormData(prev => ({
       ...prev,
@@ -117,6 +198,24 @@ const LandingPage = () => {
         document: e.target.files[0]
       }
     }));
+  };
+
+  const resetApplication = () => {
+    if (userId && jobId) {
+      localStorage.removeItem(getStorageKey(userId, jobId));
+      setVerificationStatus({
+        aadhar: false,
+        pan: false,
+        marksheet10: false,
+        marksheet12: false,
+        gate: false,
+        resume: false
+      });
+      setFormData({
+        // Reset to initial state
+        // ...initial formData state
+      });
+    }
   };
 
   const verifyDocument = async (section, docType) => {
@@ -131,10 +230,7 @@ const LandingPage = () => {
 
     try {
       // Show loading state
-      setVerificationStatus(prev => ({
-        ...prev,
-        [section]: 'loading'
-      }));
+      
       const response = await axios.post(
         'http://127.0.0.1:8000/api/v1/ocr/process-document',
         data,
@@ -146,10 +242,11 @@ const LandingPage = () => {
           withCredentials: true,
         }
       );
-
+      console.log('Response:', response.data);
       const { important_data } = response.data;
       let isVerified = false;
-
+      console.log('Response:', response.data);
+      console.log('Important Data:', important_data);
       switch (docType) {
         case 'Aadhaar Card':
           isVerified = 
@@ -179,19 +276,28 @@ const LandingPage = () => {
             important_data['GATE Score']?.includes(formData[section].gateScore);
           break;
 
-        case 'Resume':
-          isVerified = 
-            important_data.Name?.toLowerCase().includes(formData[section].fullName.toLowerCase()) &&
-            important_data['Skills']?.toLowerCase().includes(formData[section].skills.toLowerCase());
-          break;
+          case 'Resume':
+            // Make verification always successful if document is uploaded
+            isVerified = true;
+            // Still log the extracted data for reference
+            console.log('Resume Data:', important_data);
+            break;
       }
 
-      setVerificationStatus(prev => ({
-        ...prev,
-        [section]: isVerified
-      }));
-
-      alert(isVerified ? 'Document Verified Successfully!' : 'Verification Failed: Information Mismatch');
+      setVerificationStatus(prev => {
+        const newStatus = {
+          ...prev,
+          [section]: isVerified
+        };
+        // Save immediately after verification
+        if (userId && jobId) {
+          saveToLocalStorage(userId, jobId, {
+            verificationStatus: newStatus,
+            formData
+          });
+        }
+        return newStatus;
+      });
     } catch (error) {
       console.error('Error Details:', {
         message: error.message,
@@ -287,6 +393,63 @@ const renderFormSection = (section, title, fields, docType) => (
     </Card>
   );
 
+  const PreviewSection = () => (
+    <Card className="preview-card p-6 mt-8">
+      <h2 className="text-2xl font-bold mb-6">Application Preview</h2>
+      
+      <div className="grid grid-cols-2 gap-6">
+        <div>
+          <h3 className="font-semibold mb-4">Job Details</h3>
+          {jobDetails && (
+            <div className="space-y-2">
+              <p><span className="font-medium">Position:</span> {jobDetails.title}</p>
+              <p><span className="font-medium">Company:</span> {jobDetails.company}</p>
+              <p><span className="font-medium">Location:</span> {jobDetails.location}</p>
+            </div>
+          )}
+        </div>
+  
+        <div>
+          <h3 className="font-semibold mb-4">Applicant Details</h3>
+          <div className="space-y-2">
+            <p><span className="font-medium">Name:</span> {formData.aadhar.fullName}</p>
+            <p><span className="font-medium">Contact:</span> {formData.aadhar.mobileNumber}</p>
+            <p><span className="font-medium">Skills:</span> {formData.resume.skills}</p>
+            <p><span className="font-medium">Experience:</span> {formData.resume.experience}</p>
+          </div>
+        </div>
+      </div>
+  
+      <div className="mt-8">
+        <h3 className="font-semibold mb-4">Verified Documents</h3>
+        <div className="grid grid-cols-3 gap-4">
+          {Object.entries(verificationStatus).map(([doc, status]) => (
+            <div key={doc} className={`p-3 rounded ${status ? 'bg-green-100' : 'bg-red-100'}`}>
+              <p className="font-medium">{doc.charAt(0).toUpperCase() + doc.slice(1)}</p>
+              <p className="text-sm">{status ? '✓ Verified' : '✗ Not Verified'}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+  
+      <Button 
+    onClick={handleSubmitApplication}
+    className="w-full mt-8 bg-blue-600 hover:bg-blue-700"
+    disabled={!Object.entries(verificationStatus)
+        .filter(([key]) => key !== 'resume') // Exclude resume from verification check
+        .every(([_, status]) => status === true) || 
+        !formData.resume.fullName || 
+        !formData.resume.skills || 
+        !formData.resume.experience || 
+        !formData.resume.contactInfo
+    }
+>
+    Submit Application
+</Button>
+    </Card>
+  );
+
+  
   return (
     <div className="min-h-screen bg-gray-50 p-6 ">
     <div className="max-w-full mx-auto bg-white rounded-lg shadow-lg p-6 ">
@@ -375,17 +538,30 @@ const renderFormSection = (section, title, fields, docType) => (
           </TabsContent>
 
           <TabsContent value="resume">
-            {renderFormSection('resume', 'Resume Details', [
-              { name: 'fullName', label: 'Full Name' },
-              { name: 'skills', label: 'Skills' },
-              { name: 'experience', label: 'Experience' },
-              { name: 'contactInfo', label: 'Contact Information' }
-            ], 'Resume')}
-          </TabsContent>
-          
+    {renderFormSection('resume', 'Resume Details', [
+        { name: 'fullName', label: 'Full Name' },
+        { name: 'skills', label: 'Skills' },
+        { name: 'experience', label: 'Experience' },
+        { name: 'contactInfo', label: 'Contact Information' }
+    ], 'Resume')}
+    <div className="mt-4 p-4 bg-blue-50 rounded-lg">
+        <p className="text-sm text-blue-600">
+            Note: Document verification is optional for resume, but all fields are mandatory.
+        </p>
+    </div>
+</TabsContent>
+          {calculateProgress() === 100 && (
+                <Button 
+                    onClick={handleSubmitApplication}
+                    className="w-full mt-8 bg-green-600 hover:bg-green-700 text-white"
+                >
+                    Submit Application
+                </Button>
+            )}
         </Tabs>
       </div>
       </div>
+      
     </div>
   );
 };

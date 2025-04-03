@@ -1,48 +1,14 @@
-import { useState } from 'react';
+import { useState,useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import './modal.css';
 import './background.css'
 
-const dummyJobs = [
-  {
-    id: 1,
-    adNo: "JOB2024001",
-    companyName: "Tech Solutions Inc.",
-    jobTitle: "Senior Software Engineer",
-    publishDate: "2024-03-15",
-    closeDate: "2024-04-15",
-    description: "Looking for an experienced software engineer with React and Node.js expertise.",
-    location: "Bangalore, India",
-    salary: "18-25 LPA"
-  },
-  {
-    id: 2,
-    adNo: "JOB2024002",
-    companyName: "Digital Innovations",
-    jobTitle: "Full Stack Developer",
-    publishDate: "2024-03-18",
-    closeDate: "2024-04-20",
-    description: "Seeking a full stack developer with MERN stack experience.",
-    location: "Pune, India",
-    salary: "12-18 LPA"
-  },
-  {
-    id: 3,
-    adNo: "JOB2024003",
-    companyName: "DataTech Solutions",
-    jobTitle: "Data Scientist",
-    publishDate: "2024-03-20",
-    closeDate: "2024-04-25",
-    description: "Looking for a data scientist with ML and AI experience.",
-    location: "Hyderabad, India",
-    salary: "20-28 LPA"
-  }
-];
 
 
 const MainPage = () => {
   const navigate = useNavigate();
+  const [jobs, setJobs] = useState([]); // Add this state
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLogin, setIsLogin] = useState(true);
   
@@ -75,6 +41,17 @@ const MainPage = () => {
     { name: 'password', label: 'Password', type: 'password' },
     { name: 'phone_number', label: 'Phone Number', type: 'tel' }
   ];
+  useEffect(() => {
+    fetchJobs();
+  }, []);
+  const fetchJobs = async () => {
+    try {
+      const response = await axios.get('http://127.0.0.1:8000/api/v1/jobs/');
+      setJobs(response.data);
+    } catch (error) {
+      console.error('Error fetching jobs:', error);
+    }
+  };
 
   const handleApplyJob = (jobId) => {
     if (!localStorage.getItem('token')) {
@@ -105,7 +82,7 @@ const MainPage = () => {
 
             if (userRole === 'applicant') {
                 setIsModalOpen(false);
-                navigate('/dashboard');
+                navigate('/applicantpage');
             } else if (userRole === 'recruiter'){
               setIsModalOpen(false);
               navigate('/recruiter-dashboard');
@@ -243,43 +220,51 @@ const MainPage = () => {
           </div>
 
           {/* Job Listings Section */}
-          <div className="lg:col-span-2 space-y-6">
-            <h2 className="text-2xl font-bold mb-6">Latest Job Opportunities</h2>
-            <div className="grid gap-6">
-              {dummyJobs.map(job => (
-                <div key={job.id} className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
-                  <div className="p-6">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <span className="text-sm text-gray-500">Ad No: {job.adNo}</span>
-                        <h3 className="text-xl font-semibold mt-1">{job.jobTitle}</h3>
-                        <p className="text-blue-600 font-medium">{job.companyName}</p>
-                      </div>
-                      <button
-                        onClick={() => handleApplyJob(job.id)}
-                        className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
-                      >
-                        Apply Now
-                      </button>
-                    </div>
-                    <div className="mt-4">
-                      <p className="text-gray-600">{job.description}</p>
-                      <div className="mt-4 grid grid-cols-2 gap-4 text-sm text-gray-500">
-                        <div>
-                          <p>🏢 Location: {job.location}</p>
-                          <p>💰 Salary: {job.salary}</p>
-                        </div>
-                        <div>
-                          <p>📅 Published: {new Date(job.publishDate).toLocaleDateString()}</p>
-                          <p>⏰ Closes: {new Date(job.closeDate).toLocaleDateString()}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+          {/* Job Listings Section */}
+<div className="lg:col-span-2 space-y-6">
+  <h2 className="text-2xl font-bold mb-6">Latest Job Opportunities</h2>
+  {jobs.length === 0 ? (
+    <div className="text-center py-8">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+      <p className="text-gray-500">Loading jobs...</p>
+    </div>
+  ) : (
+    <div className="grid gap-6">
+      {jobs.map(job => (
+        <div key={job.id} className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
+          <div className="p-6">
+            <div className="flex justify-between items-start">
+              <div>
+                <span className="text-sm text-gray-500">Ad No: {job.adNo}</span>
+                <h3 className="text-xl font-semibold mt-1">{job.jobTitle}</h3>
+                <p className="text-blue-600 font-medium">{job.companyName}</p>
+              </div>
+              <button
+                onClick={() => handleApplyJob(job.id)}
+                className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
+              >
+                Apply Now
+              </button>
+            </div>
+            <div className="mt-4">
+              <p className="text-gray-600">{job.description}</p>
+              <div className="mt-4 grid grid-cols-2 gap-4 text-sm text-gray-500">
+                <div>
+                  <p>🏢 Location: {job.location}</p>
+                  <p>💰 Salary: {job.salary}</p>
                 </div>
-              ))}
+                <div>
+                  <p>📅 Published: {new Date(job.publishDate).toLocaleDateString()}</p>
+                  <p>⏰ Closes: {new Date(job.closeDate).toLocaleDateString()}</p>
+                </div>
+              </div>
             </div>
           </div>
+        </div>
+      ))}
+    </div>
+  )}
+</div>
         </div>
       </div>
         {isModalOpen && (

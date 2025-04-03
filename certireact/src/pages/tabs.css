@@ -147,3 +147,92 @@
       grid-template-columns: repeat(2, 1fr) !important;
     }
   }
+
+  /* Progress Bar Styles */
+.progress-wrapper {
+    background: #f1f5f9;
+    border-radius: 9999px;
+    padding: 0.5rem;
+    border: 1px solid #e2e8f0;
+    margin: 2rem 0;
+  }
+  
+  [role="progressbar"] {
+    position: relative;
+    height: 0.5rem !important;
+    background: #e2e8f0;
+    border-radius: 9999px;
+    overflow: hidden;
+  }
+  
+  [role="progressbar"] > div {
+    position: absolute;
+    height: 100%;
+    background: linear-gradient(90deg, #2563eb, #3b82f6);
+    transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 9999px;
+    box-shadow: 0 0 8px rgba(37, 99, 235, 0.3);
+  }
+  
+  /* Progress Animation */
+  @keyframes progress-pulse {
+    0% {
+      box-shadow: 0 0 8px rgba(37, 99, 235, 0.3);
+    }
+    50% {
+      box-shadow: 0 0 16px rgba(37, 99, 235, 0.5);
+    }
+    100% {
+      box-shadow: 0 0 8px rgba(37, 99, 235, 0.3);
+    }
+  }
+  
+  [role="progressbar"] > div {
+    animation: progress-pulse 2s infinite;
+  }
+
+
+
+  .fade-enter {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  .fade-enter-active {
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 300ms, transform 300ms;
+  }
+  .fade-exit {
+    opacity: 1;
+  }
+  .fade-exit-active {
+    opacity: 0;
+    transform: translateY(-20px);
+    transition: opacity 300ms, transform 300ms;
+  }
+
+
+
+  /* Add to your tabs.css file */
+.preview-card {
+    animation: slideIn 0.3s ease-out;
+  }
+  
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .verified-badge {
+    background-color: #10B981;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+  }
