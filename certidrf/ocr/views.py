@@ -131,6 +131,12 @@ def extract_important_details(doc_type, text):
         extracted_data["Registration Number"] = re.findall(r"(?:Registration Number|Reg\. No\.|No\.)\s*:\s*(\w+)", text)
         extracted_data["GATE Score"] = re.findall(r"GATE Score:\s(\d+)", text)
         extracted_data["AIR"] = re.findall(r"(?:In the test paper|All India Rank|AIR):?\s*(\d+)", text)
+        extracted_data["Test Paper"] = re.findall(r"Test Paper:\s*([\w\s&-]+)\s*\([A-Z]+\)", text)
+        if extracted_data["Test Paper"]:
+            extracted_data["Test Paper"] = [test.strip() for test in extracted_data["Test Paper"]]
+        extracted_data["Date of Examination"] = re.findall(r"Date of Examination:\s*([\w\s\d,]+)", text)
+        if extracted_data["Date of Examination"]:
+            extracted_data["Date of Examination"] = [date.strip() for date in extracted_data["Date of Examination"]]
 
     elif doc_type == "Resume":
         extracted_data["Name"] = re.findall(r"Name:\s([A-Za-z ]+)", text)
