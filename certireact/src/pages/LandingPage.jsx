@@ -223,14 +223,18 @@ const LandingPage = () => {
       alert('Please upload a document first');
       return;
     }
-
+  
+    // Set the verification status to "loading" for the current section
+    setVerificationStatus(prev => ({
+      ...prev,
+      [section]: 'loading'
+    }));
+  
     const data = new FormData();
     data.append('image', formData[section].document);
     data.append('document_type', docType);
-
+  
     try {
-      // Show loading state
-      
       const response = await axios.post(
         'http://127.0.0.1:8000/api/v1/ocr/process-document',
         data,
@@ -242,81 +246,87 @@ const LandingPage = () => {
           withCredentials: true,
         }
       );
-      console.log('Response:', response.data);
+  
       const { important_data } = response.data;
-      let isVerified = false;
-      console.log('Response:', response.data);
-      console.log('Important Data:', important_data);
+      let isVerified = true;
+      const mismatchedFields = [];
+  
       switch (docType) {
         case 'Aadhaar Card':
-          isVerified = 
-            important_data.Name?.includes(formData[section].fullName) &&
-            important_data['Aadhaar Number']?.replace(/\s/g, '').includes(formData[section].aadharNumber) ;
-          // important_data.DOB?.includes(formData[section].dateOfBirth)
+          if (important_data.Name !== formData[section].fullName) {
+            isVerified = false;
+            mismatchedFields.push('Full Name');
+          }
+          if (important_data['Aadhaar Number']?.replace(/\s/g, '') !== formData[section].aadharNumber) {
+            isVerified = false;
+            mismatchedFields.push('Aadhaar Number');
+          }
           break;
-
+  
         case 'PAN Card':
-          isVerified = 
-            important_data.Name?.toLowerCase().includes(formData[section].fullName.toLowerCase()) &&
-            important_data['PAN Number']?.includes(formData[section].panNumber);
+          if (important_data.Name?.toLowerCase() !== formData[section].fullName.toLowerCase()) {
+            isVerified = false;
+            mismatchedFields.push('Full Name');
+          }
+          if (important_data['PAN Number'] !== formData[section].panNumber) {
+            isVerified = false;
+            mismatchedFields.push('PAN Number');
+          }
           break;
-
+  
         case '10th Marksheet':
         case '12th Marksheet':
-          isVerified = 
-            important_data.Name?.toLowerCase().includes(formData[section].fullName.toLowerCase()) &&
-            important_data['Roll Number']?.includes(formData[section].rollNumber) &&
-            important_data.Percentage?.includes(formData[section].percentage);
+          if (important_data.Name?.toLowerCase() !== formData[section].fullName.toLowerCase()) {
+            isVerified = false;
+            mismatchedFields.push('Full Name');
+          }
+          if (important_data['Roll Number'] !== formData[section].rollNumber) {
+            isVerified = false;
+            mismatchedFields.push('Roll Number');
+          }
+          if (important_data.Percentage !== formData[section].percentage) {
+            isVerified = false;
+            mismatchedFields.push('Percentage');
+          }
           break;
-
-          case 'GATE Scorecard':
-            console.log('Comparing GATE Details:', {
-                providedName: formData[section].fullName.toLowerCase(),
-                extractedName: important_data.Name?.toLowerCase(),
-                providedRegNo: formData[section].registrationNumber,
-                extractedRegNo: important_data['Registration Number'],
-                providedScore: formData[section].gateScore,
-                extractedScore: important_data['GATE Score']
-            });
-        
-            isVerified = 
-                important_data.Name?.toLowerCase().includes(formData[section].fullName.toLowerCase()) &&
-                String(important_data['Registration Number'])?.includes(String(formData[section].registrationNumber)) &&
-                String(important_data['GATE Score'])?.includes(String(formData[section].gateScore));
-        
-            // Log verification result
-            console.log('GATE Verification Result:', isVerified);
-            break;
-
-          case 'Resume':
-            // Make verification always successful if document is uploaded
-            isVerified = true;
-            // Still log the extracted data for reference
-            console.log('Resume Data:', important_data);
-            break;
+  
+        case 'GATE Scorecard':
+          if (important_data.Name?.toLowerCase() !== formData[section].fullName.toLowerCase()) {
+            isVerified = false;
+            mismatchedFields.push('Full Name');
+          }
+          if (String(important_data['Registration Number']) !== String(formData[section].registrationNumber)) {
+            isVerified = false;
+            mismatchedFields.push('Registration Number');
+          }
+          if (String(important_data['GATE Score']) !== String(formData[section].gateScore)) {
+            isVerified = false;
+            mismatchedFields.push('GATE Score');
+          }
+          break;
+  
+        case 'Resume':
+          // Always mark resume as verified
+          isVerified = true;
+          break;
       }
-
-      setVerificationStatus(prev => {
-        const newStatus = {
-          ...prev,
-          [section]: isVerified
-        };
-        // Save immediately after verification
-        if (userId && jobId) {
-          saveToLocalStorage(userId, jobId, {
-            verificationStatus: newStatus,
-            formData
-          });
-        }
-        return newStatus;
-      });
+  
+      if (!isVerified) {
+        alert(`The following fields do not match: ${mismatchedFields.join(', ')}`);
+      }
+  
+      // Update the verification status based on the result
+      setVerificationStatus(prev => ({
+        ...prev,
+        [section]: isVerified
+      }));
     } catch (error) {
       console.error('Error Details:', {
         message: error.message,
         response: error.response?.data,
         status: error.response?.status
       });
-      
+  
       if (error.response?.status === 400) {
         alert('Invalid request: Please check your form data');
       } else if (error.response?.status === 401) {
@@ -324,8 +334,15 @@ const LandingPage = () => {
       } else {
         alert(`Error: ${error.message}`);
       }
+  
+      // Set the verification status to false in case of an error
+      setVerificationStatus(prev => ({
+        ...prev,
+        [section]: false
+      }));
     }
-};
+  };
+  
 
 const renderFormSection = (section, title, fields, docType) => (
   <Card className="form-card">
