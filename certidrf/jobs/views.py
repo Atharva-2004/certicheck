@@ -27,6 +27,19 @@ def list_jobs(request):
     serializer = JobSerializer(jobs, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
+# 📄 List jobs created by the recruiter
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def list_created_jobs_by_recruiter(request):
+    """List all jobs created by the authenticated recruiter."""
+    if request.user.role != 'recruiter':
+        return Response({'error': 'Only recruiters can view their created jobs.'}, status=status.HTTP_403_FORBIDDEN)
+
+    # Filter jobs by the current recruiter
+    jobs = Job.objects.filter(recruiter=request.user)
+    serializer = JobSerializer(jobs, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def list_applied_jobs(request):

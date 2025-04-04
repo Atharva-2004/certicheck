@@ -88,11 +88,27 @@ const RecruiterDashboard = () => {
 
   const fetchCreatedJobs = async (token) => {
     try {
-      const response = await axios.get('http://127.0.0.1:8000/api/v1/jobs/list', {
+      const response = await axios.get('http://127.0.0.1:8000/api/v1/jobs/list-created-jobs', {
         headers: { Authorization: `Bearer ${token}` }
       });
       const jobs = response.data;
-      setCreatedJobs(jobs.filter(job => job.recruiter === user?.id));
+      // Fetch applications count for each job
+    const jobsWithApplications = await Promise.all(
+      jobs.map(async (job) => {
+        try {
+          const applicationsResponse = await axios.get(
+            `http://127.0.0.1:8000/api/v1/jobs/${job.id}/applications/`,
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+          return { ...job, applicationsCount: applicationsResponse.data.length };
+        } catch (error) {
+          console.error(`Error fetching applications for job ${job.id}:`, error);
+          return { ...job, applicationsCount: 0 }; // Default to 0 if there's an error
+        }
+      })
+    );
+
+    setCreatedJobs(jobsWithApplications);
       
       // Generate and set the next ad number
       const nextAdNo = generateNextAdNo(jobs);
@@ -338,7 +354,7 @@ const RecruiterDashboard = () => {
                               {new Date(job.closeDate) > new Date() ? 'Active' : 'Closed'}
                             </span>
                             <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full">
-                              {job.applications?.length || 0} Applications
+                              {job.applicationsCount || 0} Applications
                             </span>
                           </div>
                         </div>
