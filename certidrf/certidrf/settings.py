@@ -145,7 +145,17 @@ DATABASES = {
     }
 }
 
+import cloudinary
+import cloudinary.uploader
+from cloudinary.utils import cloudinary_url
 
+# Configuration       
+cloudinary.config( 
+    cloud_name = env('cloudinary_cloud_name'), 
+    api_key = env('cloudinary_api_key'), 
+    api_secret = env('cloudinary_api_secret'),
+    secure=True
+)
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators

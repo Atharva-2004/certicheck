@@ -46,7 +46,7 @@ const ApplicantPage = () => {
     const fetchAppliedJobs = async () => {
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.get('http://127.0.0.1:8000/api/v1/jobs/applied', {
+            const response = await axios.get('http://127.0.0.1:8000/api/v1/jobs/applied-jobs', {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setAppliedJobs(response.data);
@@ -70,8 +70,8 @@ const ApplicantPage = () => {
             <Card className="p-6 hover:shadow-lg transition-shadow">
                 <div className="flex justify-between items-start">
                     <div>
-                        <h3 className="text-xl font-semibold">{job.title}</h3>
-                        <p className="text-blue-600">{job.company}</p>
+                        <h3 className="text-xl font-semibold">{job.jobTitle}</h3>
+                        <p className="text-blue-600">{job.companyName}</p>
                         <p className="text-gray-600 mt-2">{job.description}</p>
                         <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
                             <div>
@@ -79,8 +79,8 @@ const ApplicantPage = () => {
                                 <p>💰 Salary: {job.salary}</p>
                             </div>
                             <div>
-                                <p>📅 Posted: {new Date(job.created_at).toLocaleDateString()}</p>
-                                <p>⏰ Deadline: {new Date(job.deadline).toLocaleDateString()}</p>
+                                <p>📅 Posted: {new Date(job.publishDate).toLocaleDateString()}</p>
+                                <p>⏰ Deadline: {new Date(job.closeDate).toLocaleDateString()}</p>
                             </div>
                         </div>
                     </div>
