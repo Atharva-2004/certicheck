@@ -147,48 +147,105 @@ const LandingPage = () => {
   const handleSubmitApplication = async () => {
     try {
         const token = localStorage.getItem('token');
-        
-        // Create FormData object to handle file uploads
+        if (!token) {
+            alert('Please login to submit your application');
+            navigate('/');
+            return;
+        }
+
+        // Validate resume fields
+        if (!formData.resume.fullName || !formData.resume.skills || 
+            !formData.resume.experience || !formData.resume.contactInfo) {
+            alert('Please fill all resume fields');
+            return;
+        }
+
         const formDataToSend = new FormData();
-        
-        // Add all documents
-        Object.keys(formData).forEach(docType => {
-            if (formData[docType].document) {
-                formDataToSend.append(docType, formData[docType].document);
-            }
-        });
 
+        // Add document files
+        if (formData.aadhar.document) {
+            formDataToSend.append('aadhaar_image', formData.aadhar.document);
+        }
+        if (formData.pan.document) {
+            formDataToSend.append('pan_image', formData.pan.document);
+        }
+        if (formData.marksheet10.document) {
+            formDataToSend.append('marks_10th_image', formData.marksheet10.document);
+        }
+        if (formData.marksheet12.document) {
+            formDataToSend.append('marks_12th_image', formData.marksheet12.document);
+        }
+        if (formData.gate.document) {
+            formDataToSend.append('gate_image', formData.gate.document);
+        }
+        if (formData.resume.document) {
+            formDataToSend.append('resume_file', formData.resume.document);
+        }
+
+        // Create flat structure matching backend expectations
         const applicationData = {
-          fullName: formData.aadhar.fullName,
-          dateOfBirth: formData.aadhar.dateOfBirth,
-          mobileNumber: formData.aadhar.mobileNumber,
-          skills: formData.resume.skills,
-          experience: formData.resume.experience
-      };
+            job: jobId,
+            resume_name: formData.resume.fullName,
+            // Resume fields
+            skills: formData.resume.skills,
+            resume_contact_info: formData.resume.experience,
+            contact_info: formData.resume.contactInfo,
+            // Aadhar fields
+            aadhaar_number: formData.aadhar.aadharNumber,
+            aadhaar_name: formData.aadhar.fullName,
+            aadhaar_dob: formData.aadhar.dateOfBirth,
+            aadhaar_address: formData.aadhar.address,
+            aadhaar_mobile: formData.aadhar.mobileNumber,
+            // PAN fields
+            pan_number: formData.pan.panNumber,
+            pan_name: formData.pan.fullName,
+            pan_dob: formData.pan.dateOfBirth,
+            pan_father_name: formData.pan.fatherName,
+            // 10th fields
+            marks_10th_name: formData.marksheet10.fullName,
+            marks_10th_roll: formData.marksheet10.rollNumber,
+            marks_10th_percentage: formData.marksheet10.percentage,
+            marks_10th_board: formData.marksheet10.board,
+            // 12th fields
+            marks_12th_name: formData.marksheet12.fullName,
+            marks_12th_roll: formData.marksheet12.rollNumber,
+            marks_12th_percentage: formData.marksheet12.percentage,
+            marks_12th_board: formData.marksheet12.board,
+            // GATE fields
+            gate_name: formData.gate.fullName,
+            gate_reg_number: formData.gate.registrationNumber,
+            gate_score: formData.gate.gateScore,
+            gate_air: formData.gate.air,
+            // Verification status
+            verification_status: verificationStatus
+        };
 
-      formDataToSend.append('data', JSON.stringify(applicationData));
+        // Add JSON data
+        formDataToSend.append('data', JSON.stringify(applicationData));
 
-      const response = await axios.post(
-          `http://127.0.0.1:8000/api/v1/jobs/${jobId}/apply`,
-          formDataToSend,
-          {
-              headers: {
-                  'Authorization': `Bearer ${token}`,
-                  'Content-Type': 'multipart/form-data'
-              }
-          }
-      );
-      if (response.status === 201) {
-        // Clear stored data after successful submission
-        localStorage.removeItem(getStorageKey(userId, jobId));
-        alert('Application submitted successfully!');
-        navigate('/dashboard');
-      
+        console.log('Sending application data:', applicationData);
+
+        const response = await axios.post(
+            `http://127.0.0.1:8000/api/v1/jobs/${jobId}/apply/`,
+            formDataToSend,
+            {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'multipart/form-data'
+                }
+            }
+        );
+
+        if (response.status === 201) {
+            localStorage.removeItem(getStorageKey(userId, jobId));
+            alert('Application submitted successfully!');
+            navigate('/dashboard');
+        }
+    } catch (error) {
+        console.error('Error submitting application:', error.response?.data);
+        const errorMessage = error.response?.data?.error || 'Please try again.';
+        alert(`Error submitting application: ${errorMessage}`);
     }
-} catch (error) {
-    console.error('Error submitting application:', error);
-    alert('Error submitting application. Please try again.');
-}
 };
   const handleFileChange = (section, e) => {
     setFormData(prev => ({

@@ -1,9 +1,12 @@
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, parser_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
+import json
 from .models import Job, JobApplication
 from .serializers import JobSerializer, JobApplicationSerializer
+from rest_framework.parsers import MultiPartParser, FormParser
+
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
@@ -69,6 +72,7 @@ def retrieve_job(request, job_id):
 # 📥 Apply for a job
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
+@parser_classes([MultiPartParser, FormParser])
 def apply_for_job(request, job_id):
     try:
         job = Job.objects.get(id=job_id)
@@ -81,22 +85,36 @@ def apply_for_job(request, job_id):
     required_docs = job.required_documents
     data = request.data
 
+    # Parse nested JSON from 'data' key if it exists and is a string
+    if 'data' in data:
+        try:
+            if isinstance(data['data'], str):
+                parsed_data = json.loads(data['data'])  # Parse the JSON string
+            else:
+                parsed_data = data['data']
+        except (KeyError, json.JSONDecodeError):
+            return Response({"error": "Invalid data format"}, status=status.HTTP_400_BAD_REQUEST)
+    else:
+        parsed_data = data
+
+    # Debug logging to inspect parsed data
+    print("Parsed Data:", parsed_data)
+
     # Validate uploaded document fields
     for doc, fields in required_docs.items():
         for field in fields:
-            if field not in data:
+            if field not in parsed_data:
                 return Response({"error": f"{field} is required for {doc}"}, status=status.HTTP_400_BAD_REQUEST)
 
     # Explicitly assign the applicant and job
-    data["job"] = job_id
-    serializer = JobApplicationSerializer(data=data)
+    parsed_data["job"] = job_id
+    serializer = JobApplicationSerializer(data=parsed_data)
 
     if serializer.is_valid():
         serializer.save(applicant=request.user)  # Assign the applicant explicitly
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 # 📜 List job applications (Recruiter only)
 @api_view(["GET"])
