@@ -187,9 +187,9 @@ const LandingPage = () => {
             job: jobId,
             resume_name: formData.resume.fullName,
             // Resume fields
-            skills: formData.resume.skills,
-            resume_contact_info: formData.resume.experience,
-            contact_info: formData.resume.contactInfo,
+            resume_skills: formData.resume.skills,
+            resume_experience: formData.resume.experience,
+            resume_contact_info: formData.resume.contactInfo,
             // Aadhar fields
             aadhaar_number: formData.aadhar.aadharNumber,
             aadhaar_name: formData.aadhar.fullName,
@@ -203,12 +203,12 @@ const LandingPage = () => {
             pan_father_name: formData.pan.fatherName,
             // 10th fields
             marks_10th_name: formData.marksheet10.fullName,
-            marks_10th_roll: formData.marksheet10.rollNumber,
+            marks_10th_roll_number: formData.marksheet10.rollNumber,
             marks_10th_percentage: formData.marksheet10.percentage,
             marks_10th_board: formData.marksheet10.board,
             // 12th fields
             marks_12th_name: formData.marksheet12.fullName,
-            marks_12th_roll: formData.marksheet12.rollNumber,
+            marks_12th_roll_number: formData.marksheet12.rollNumber,
             marks_12th_percentage: formData.marksheet12.percentage,
             marks_12th_board: formData.marksheet12.board,
             // GATE fields
@@ -239,7 +239,7 @@ const LandingPage = () => {
         if (response.status === 201) {
             localStorage.removeItem(getStorageKey(userId, jobId));
             alert('Application submitted successfully!');
-            navigate('/dashboard');
+            navigate('/applicantpage');
         }
     } catch (error) {
         console.error('Error submitting application:', error.response?.data);
@@ -307,6 +307,7 @@ const LandingPage = () => {
       const { important_data } = response.data;
       let isVerified = true;
       const mismatchedFields = [];
+      console.log('Important Data:', important_data);
   
       switch (docType) {
         case 'Aadhaar Card':
@@ -352,11 +353,11 @@ const LandingPage = () => {
             isVerified = false;
             mismatchedFields.push('Full Name');
           }
-          if (String(important_data['Registration Number']) !== String(formData[section].registrationNumber)) {
+          if ((important_data['Registration Number']) !== (formData[section].registrationNumber)) {
             isVerified = false;
             mismatchedFields.push('Registration Number');
           }
-          if (String(important_data['GATE Score']) !== String(formData[section].gateScore)) {
+          if ((important_data['GATE Score']) !== (formData[section].gateScore)) {
             isVerified = false;
             mismatchedFields.push('GATE Score');
           }

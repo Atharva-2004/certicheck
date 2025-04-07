@@ -60,7 +60,7 @@ const ApplicantPage = () => {
         window.location.href = '/';
     };
 
-    const JobCard = ({ job }) => (
+    const JobCard = ({ job, isApplied }) => (
         <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -84,17 +84,25 @@ const ApplicantPage = () => {
                             </div>
                         </div>
                     </div>
+                    {!isApplied && (
                     <Button 
-                    onClick={() => navigate(`/apply-job/${job.id}`, {
-                        state: { jobId: job.id, userId: user.id }
-                    })}
-                    className="bg-blue-600 hover:bg-blue-700"
-                >
-                    Apply Now
-                </Button>
-                </div>
-            </Card>
-        </motion.div>
+                        onClick={() => navigate(`/apply-job/${job.id}`, {
+                            state: { jobId: job.id, userId: user.id }
+                        })}
+                        className="bg-blue-600 hover:bg-blue-700"
+                    >
+                        Apply Now
+                    </Button>
+                )}
+                {isApplied && (
+                    <div className="bg-green-100 text-green-800 px-4 py-2 rounded-md">
+                        Already Applied
+                    </div>
+                )}
+            </div>
+        </Card>
+    </motion.div>
+
     );
 
     return (
@@ -160,25 +168,35 @@ const ApplicantPage = () => {
 
                     {/* Main Content */}
                     <div className="col-span-9">
-                        <AnimatePresence mode='wait'>
-                            {activeTab === 'available' ? (
-                                <div className="space-y-4">
-                                    <h2 className="text-2xl font-semibold mb-6">Available Jobs</h2>
-                                    {jobs.map(job => (
-                                        <JobCard key={job.id} job={job} />
-                                    ))}
-                                </div>
-                            ) : (
-                                <div className="space-y-4">
-                                    <h2 className="text-2xl font-semibold mb-6">Applied Jobs</h2>
-                                    {appliedJobs.map(job => (
-                                        <JobCard key={job.id} job={job} />
-                                    ))}
-                                </div>
-                            )}
-                        </AnimatePresence>
-                    </div>
-                </div>
+                <AnimatePresence mode='wait'>
+                    {activeTab === 'available' ? (
+                        <div className="space-y-4">
+                            <h2 className="text-2xl font-semibold mb-6">Available Jobs</h2>
+                            {jobs
+                                .filter(job => !appliedJobs.some(applied => applied.id === job.id))
+                                .map(job => (
+                                    <JobCard 
+                                        key={job.id} 
+                                        job={job} 
+                                        isApplied={false}
+                                    />
+                                ))}
+                        </div>
+                    ) : (
+                        <div className="space-y-4">
+                            <h2 className="text-2xl font-semibold mb-6">Applied Jobs</h2>
+                            {appliedJobs.map(job => (
+                                <JobCard 
+                                    key={job.id} 
+                                    job={job} 
+                                    isApplied={true}
+                                />
+                            ))}
+                        </div>
+                    )}
+                </AnimatePresence>
+            </div>
+            </div>
             </div>
         </div>
     );

@@ -25,6 +25,18 @@
     --ring: 222.2 47.4% 11.2%;
     --radius: 0.5rem;
   }
+
+  body[data-scroll-locked] {
+    overflow: hidden;
+    padding-right: var(--removed-body-scroll-bar-size, 0);
+  }
+  body {
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: center;
+    /* align-content: center; */
+    flex-direction: column-reverse;
+}
  
   .dark {
     --background: 222.2 84% 4.9%;

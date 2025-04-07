@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import { ScrollArea } from "../components/ui/scroll-area";
 import { useNavigate } from 'react-router-dom';
 import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
+import './dialog.css';
 import {
   FaUser,
   FaBriefcase,
@@ -16,6 +19,20 @@ import {
   FaDollarSign,
   FaCalendarAlt
 } from 'react-icons/fa';
+import { Cross2Icon } from "@radix-ui/react-icons";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogClose
+} from "../components/ui/dialog";
+// Update the imports at the top
+
+
+
+
 
 const generateNextAdNo = (jobs) => {
     const currentYear = new Date().getFullYear();
@@ -39,6 +56,10 @@ const generateNextAdNo = (jobs) => {
 
 const RecruiterDashboard = () => {
   const navigate = useNavigate();
+  const [selectedJob, setSelectedJob] = useState(null);
+  const [jobApplications, setJobApplications] = useState([]);
+  const [showJobDetail, setShowJobDetail] = useState(false);
+  const [selectedApplication, setSelectedApplication] = useState(null);  
   const [user, setUser] = useState(null);
   const [showProfile, setShowProfile] = useState(false);
   const [showCreateJob, setShowCreateJob] = useState(false);
@@ -51,16 +72,86 @@ const RecruiterDashboard = () => {
     description: '',
     location: '',
     salary: '',
-    required_documents: {
-      "Aadhaar Card": ["fullName", "dateOfBirth", "address", "mobileNumber", "aadharNumber"],
-      "PAN Card": ["fullName", "dateOfBirth", "fatherName", "panNumber"],
-      "10th Marksheet": ["fullName", "rollNumber", "percentage", "board"],
-      "12th Marksheet": ["fullName", "rollNumber", "percentage", "board"],
-      "GATE Scorecard": ["fullName", "registrationNumber", "gateScore", "air"],
-      "Resume": ["fullName", "skills", "experience", "contactInfo"]
-    }
+    required_documents: {}
   });
+  const [availableDocuments] = useState({
+    "Aadhaar Card": [
+      "aadhaar_name",
+      "aadhaar_dob",
+      "aadhaar_address",
+      "aadhaar_mobile",
+      "aadhaar_number"
+    ],
+    "PAN Card": [
+      "pan_name",
+      "pan_dob",
+      "pan_father_name",
+      "pan_number"
+    ],
+    "10th Marksheet": [
+      "marks_10th_name",
+      "marks_10th_roll_number",
+      "marks_10th_percentage",
+      "marks_10th_board"
+    ],
+    "12th Marksheet": [
+      "marks_12th_name",
+      "marks_12th_roll_number",
+      "marks_12th_percentage",
+      "marks_12th_board"
+    ],
+    "GATE Scorecard": [
+      "gate_name",
+      "gate_reg_number",
+      "gate_score",
+      "gate_air"
+    ],
+    "Resume": [
+      "resume_name",
+      "resume_skills",
+      "resume_experience",
+      "resume_contact_info"
+    ]
+  });
+  
+  const resetJobForm = (nextAdNo) => {
+    setJobForm({
+      adNo: nextAdNo,
+      companyName: '',
+      jobTitle: '',
+      closeDate: '',
+      description: '',
+      location: '',
+      salary: '',
+      required_documents: {}
+    });
+  
+  };
 
+  const overlayStyles = {
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    position: 'fixed',
+    inset: 0,
+    animation: 'overlayShow 150ms cubic-bezier(0.16, 1, 0.3, 1)'
+  };
+  
+  const contentStyles = {
+    backgroundColor: 'white',
+    borderRadius: '6px',
+    boxShadow: 'hsl(206 22% 7% / 35%) 0px 10px 38px -10px, hsl(206 22% 7% / 20%) 0px 10px 20px -15px',
+    position: 'fixed',
+    top: '50%',
+    left: '50%',
+    transform: 'translate(-50%, -50%)',
+    width: '90vw',
+    maxWidth: '800px',
+    maxHeight: '85vh',
+    padding: '25px',
+    animation: 'contentShow 150ms cubic-bezier(0.16, 1, 0.3, 1)',
+    overflow: 'auto'
+  };
+
+// Add after existing useState declarations
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) {
@@ -159,6 +250,21 @@ const RecruiterDashboard = () => {
   const handleLogout = () => {
     localStorage.removeItem('token');
     navigate('/');
+  };
+
+  const fetchJobDetails = async (jobId) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(
+        `http://127.0.0.1:8000/api/v1/jobs/${jobId}/applications/`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setJobApplications(response.data);
+      setShowJobDetail(true);
+    } catch (error) {
+      console.error('Error fetching job details:', error);
+      alert('Failed to load job details');
+    }
   };
 
   return (
@@ -294,6 +400,37 @@ const RecruiterDashboard = () => {
                     className="h-32"
                   />
                 </div>
+                <div>
+    <Label htmlFor="required_documents">Required Documents</Label>
+    <div className="grid grid-cols-3 gap-4 mt-2">
+      {Object.keys(availableDocuments).map(docType => (
+        <div key={docType} className="flex items-center space-x-2">
+          <input
+            type="checkbox"
+            id={`doc-${docType}`}
+            checked={jobForm.required_documents.hasOwnProperty(docType)}
+            onChange={(e) => {
+              setJobForm(prev => ({
+                ...prev,
+                required_documents: e.target.checked
+                  ? {
+                      ...prev.required_documents,
+                      [docType]: availableDocuments[docType]
+                    }
+                  : Object.fromEntries(
+                      Object.entries(prev.required_documents).filter(
+                        ([key]) => key !== docType
+                      )
+                    )
+              }));
+            }}
+            className="h-4 w-4 rounded border-gray-300"
+          />
+          <Label htmlFor={`doc-${docType}`}>{docType}</Label>
+        </div>
+      ))}
+    </div>
+  </div>
                 <Button type="submit" className="w-full">Create Job</Button>
               </form>
             </Card>
@@ -313,7 +450,11 @@ const RecruiterDashboard = () => {
                 {createdJobs
                   .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
                   .map(job => (
-                    <Card key={job.id} className="p-6 hover:shadow-lg transition-shadow">
+                    <Card key={job.id} className="p-6 hover:shadow-lg transition-shadow cursor-pointer"
+                      onClick={() => {
+                      setSelectedJob(job);
+                      fetchJobDetails(job.id);
+                    }}>
                       <div className="flex justify-between items-start">
                         <div className="space-y-3">
                           <div>
@@ -365,6 +506,156 @@ const RecruiterDashboard = () => {
             )}
           </div>
           )}
+        {showJobDetail && selectedJob && (
+  <Sheet open={showJobDetail} onOpenChange={setShowJobDetail}>
+    <SheetContent side="right" className="sheet-content">
+    <SheetHeader className="sheet-header">
+    <SheetTitle className="sheet-title">
+    Applications for {selectedJob.jobTitle}</SheetTitle>
+        <SheetDescription>
+          {selectedJob.companyName} - {jobApplications.length} Applications
+        </SheetDescription>
+      </SheetHeader>
+      <div className="job-details-card">
+        <div className="job-info-grid">
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <p><span className="font-medium">Location:</span> {selectedJob.location}</p>
+            <p><span className="font-medium">Salary:</span> {selectedJob.salary}</p>
+            <p><span className="font-medium">Posted:</span> {new Date(selectedJob.created_at).toLocaleDateString()}</p>
+            <p><span className="font-medium">Closes:</span> {new Date(selectedJob.closeDate).toLocaleDateString()}</p>
+          </div>
+        </div>
+        <div className="space-y-4">
+          {jobApplications.map(application => (
+            <Card 
+              key={application.id}
+              className="application-card"
+              onClick={() => setSelectedApplication(application)}
+            >
+              <div className="application-card">
+                <div>
+                  <h4 className="font-medium">{application.aadhaar_name}</h4>
+                  <div className="mt-1 text-sm text-gray-600">
+                    <p>{application.resume_skills}</p>
+                    <p>{application.resume_experience}</p>
+                  </div>
+                </div>
+                <Button variant="outline" size="sm">
+                  View Application
+                </Button>
+              </div>
+            </Card>
+          ))}
+        </div>
+      </div>
+    </SheetContent>
+  </Sheet>
+)}
+
+{selectedApplication && (
+  <Dialog open={!!selectedApplication} onOpenChange={() => setSelectedApplication(null)}>
+    <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogHeader>
+        <DialogTitle>Application Details</DialogTitle>
+        <DialogDescription>
+          Reviewing application from {selectedApplication.aadhaar_name}
+        </DialogDescription>
+      </DialogHeader>
+
+      <div className="mt-6 space-y-6">
+        {/* Personal Information */}
+        <div className="bg-gray-50 p-6 rounded-lg">
+            <h3 className="text-lg font-semibold mb-4">Personal Information</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-sm text-gray-500">Full Name</p>
+                <p className="font-medium">{selectedApplication.aadhaar_name}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Contact</p>
+                <p className="font-medium">{selectedApplication.aadhaar_mobile}</p>
+              </div>
+              <div className="col-span-2">
+                <p className="text-sm text-gray-500">Address</p>
+                <p className="font-medium">{selectedApplication.aadhaar_address}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Education Details */}
+          <div className="bg-gray-50 p-6 rounded-lg">
+            <h3 className="text-lg font-semibold mb-4">Education</h3>
+            <div className="space-y-4">
+              {/* 10th Standard */}
+              <div className="grid grid-cols-2 gap-4 p-4 bg-white rounded">
+                <div className="col-span-2">
+                  <h4 className="font-medium">10th Standard</h4>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Board</p>
+                  <p className="font-medium">{selectedApplication.marks_10th_board}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Percentage</p>
+                  <p className="font-medium">{selectedApplication.marks_10th_percentage}%</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4 p-4 bg-white rounded">
+                <div className="col-span-2">
+                  <h4 className="font-medium">12th Standard</h4>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Board</p>
+                  <p className="font-medium">{selectedApplication.marks_12th_board}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Percentage</p>
+                  <p className="font-medium">{selectedApplication.marks_12th_percentage}%</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 p-4 bg-white rounded">
+                <div className="col-span-2">
+                  <h4 className="font-medium">GATE Score</h4>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Registration Number</p>
+                  <p className="font-medium">{selectedApplication.gate_reg_number}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Score</p>
+                  <p className="font-medium">{selectedApplication.gate_score}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">AIR</p>
+                  <p className="font-medium">{selectedApplication.gate_air}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+        
+
+        {/* Professional Details */}
+        <div className="bg-gray-50 p-6 rounded-lg">
+            <h3 className="text-lg font-semibold mb-4">Professional Information</h3>
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm text-gray-500">Skills</p>
+                <p className="font-medium">{selectedApplication.resume_skills}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Experience</p>
+                <p className="font-medium">{selectedApplication.resume_experience}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+    </DialogContent>
+  </Dialog>
+)}
+
         </main>
       </div>
     </div>

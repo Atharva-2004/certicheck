@@ -33,7 +33,7 @@ def extract_text_from_image(image):
 
     response = client.chat.completions.create(
         model="meta-llama/Llama-Vision-Free",
-        temperature=0.05,  # Lower randomness
+        temperature=0.1,  # Lower randomness
         messages=[
             {
                 "role": "user",

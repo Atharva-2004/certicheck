@@ -1,0 +1,163 @@
+
+  
+  @tailwind base;
+  @tailwind components;
+  @tailwind utilities;
+  
+  @layer base {
+    :root {
+      --primary: 37 99 235;
+      --primary-foreground: 255 255 255;
+      --secondary: 100 116 139;
+      --success: 34 197 94;
+      --danger: 239 68 68;
+      --background: 248 250 252;
+      --card: 255 255 255;
+      --card-foreground: 30 41 59;
+      --border: 226 232 240;
+    }
+  }
+  
+  @layer components {
+    .sheet-content {
+      @apply fixed top-0 right-0 h-full shadow-xl bg-white dark:bg-gray-900;
+      width: min(900px, 90vw);
+      animation: slideIn 0.3s ease-out;
+    }
+  
+    .sheet-header {
+      @apply sticky top-0 z-10 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 p-6;
+    }
+  
+    .sheet-title {
+      @apply text-2xl font-bold text-gray-900 dark:text-white mb-2;
+    }
+  
+    .sheet-description {
+      @apply text-gray-500 dark:text-gray-400;
+    }
+  
+    .job-details-card {
+      @apply bg-gray-50 dark:bg-gray-800 rounded-lg p-6 mb-6 shadow-sm;
+    }
+  
+    .job-info-grid {
+      @apply grid gap-4 grid-cols-1 sm:grid-cols-2;
+    }
+  
+    .job-info-item {
+      @apply flex flex-col space-y-1;
+    }
+  
+    .application-card {
+      @apply bg-white dark:bg-gray-900 rounded-lg p-6 transition-all border border-gray-200 dark:border-gray-700 hover:border-blue-500 dark:hover:border-blue-400;
+    }
+  
+    .application-card:hover {
+      @apply transform scale-[1.02] shadow-lg;
+    }
+  
+    .dialog-overlay {
+      @apply fixed inset-0 bg-black/50 backdrop-blur-sm animate-in fade-in;
+    }
+  
+    .dialog-content {
+      @apply fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 
+             bg-white dark:bg-gray-900 rounded-xl shadow-2xl p-6 w-full max-w-4xl max-h-[90vh] 
+             overflow-y-auto animate-in zoom-in-95;
+    }
+  
+    .info-section {
+      @apply bg-gray-50 dark:bg-gray-800 rounded-lg p-6 mb-6;
+    }
+  
+    .section-title {
+      @apply text-xl font-semibold text-gray-900 dark:text-white mb-4;
+    }
+  
+    .info-grid {
+      @apply grid gap-6 grid-cols-1 sm:grid-cols-2;
+    }
+  
+    .info-item {
+      @apply bg-white dark:bg-gray-900 rounded-lg p-4;
+    }
+  
+    .info-label {
+      @apply text-sm text-gray-500 dark:text-gray-400 mb-1;
+    }
+  
+    .info-value {
+      @apply font-medium text-gray-900 dark:text-white;
+    }
+  }
+  
+  @keyframes slideIn {
+    from { transform: translateX(100%); }
+    to { transform: translateX(0); }
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  
+  @keyframes zoomIn {
+    from { 
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(0.95);
+    }
+    to { 
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+  }
+  
+  @media (max-width: 768px) {
+    .sheet-content {
+      @apply w-screen;
+    }
+  
+    .dialog-content {
+      @apply w-[95vw] p-4;
+    }
+  }
+  
+  @media print {
+    .dialog-content {
+      @apply static transform-none max-h-none overflow-visible;
+    }
+  
+    .application-card:hover {
+      @apply transform-none shadow-none;
+    }
+  }
+  
+  /* Dark Mode Support */
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --background-light: #1e293b;
+      --background-dark: #0f172a;
+      --text-primary: #f8fafc;
+      --text-secondary: #cbd5e1;
+      --border-color: #334155;
+      --card-hover: #334155;
+    }
+  
+
+  }
+  
+  /* Print Styles */
+  @media print {
+    .dialog-content {
+      position: relative;
+      transform: none;
+      max-height: none;
+      overflow: visible;
+    }
+  
+    .application-card:hover {
+      transform: none;
+      box-shadow: none;
+    }
+  }
