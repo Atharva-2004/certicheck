@@ -6,6 +6,7 @@ import json
 from .models import Job, JobApplication
 from .serializers import JobSerializer, JobApplicationSerializer
 from rest_framework.parsers import MultiPartParser, FormParser
+import cloudinary.uploader
 
 
 @api_view(["POST"])
@@ -103,8 +104,19 @@ def apply_for_job(request, job_id):
     # Validate uploaded document fields
     for doc, fields in required_docs.items():
         for field in fields:
-            if field not in parsed_data:
+            if field not in parsed_data and field not in request.FILES:
                 return Response({"error": f"{field} is required for {doc}"}, status=status.HTTP_400_BAD_REQUEST)
+            
+    # 3. Handle file uploads to Cloudinary and store in correct keys
+    for file_field in request.FILES:
+        uploaded_file = request.FILES[file_field]
+        try:
+            upload_result = cloudinary.uploader.upload(uploaded_file)
+            # Map uploaded file URL to the corresponding field in parsed_data
+            parsed_data[file_field + '_url'] = upload_result.get('secure_url')
+        except Exception as e:
+            return Response({"error": f"Upload failed for {file_field}: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
     # Explicitly assign the applicant and job
     parsed_data["job"] = job_id

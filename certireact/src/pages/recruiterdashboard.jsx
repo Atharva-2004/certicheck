@@ -529,10 +529,10 @@ const RecruiterDashboard = () => {
           {jobApplications.map(application => (
             <Card 
               key={application.id}
-              className="application-card"
+              className="application-card mt-2"
               onClick={() => setSelectedApplication(application)}
             >
-              <div className="application-card">
+              {/* <div className="application-card"> */}
                 <div>
                   <h4 className="font-medium">{application.aadhaar_name}</h4>
                   <div className="mt-1 text-sm text-gray-600">
@@ -543,7 +543,7 @@ const RecruiterDashboard = () => {
                 <Button variant="outline" size="sm">
                   View Application
                 </Button>
-              </div>
+              {/* </div> */}
             </Card>
           ))}
         </div>

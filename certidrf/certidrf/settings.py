@@ -52,7 +52,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'corsheaders',
     'ocr',
-    'jobs'
+    'jobs',
 ]
 
 REST_FRAMEWORK = {
@@ -146,8 +146,6 @@ DATABASES = {
 }
 
 import cloudinary
-import cloudinary.uploader
-from cloudinary.utils import cloudinary_url
 
 # Configuration       
 cloudinary.config( 
