@@ -87,9 +87,14 @@ Each credential (DB, Cloudinary, API keys) is stored securely in Jenkins and wri
 👥 Team & Responsibilities
 
 Name	              Roll No	                Contribution
+
 Atharva Ajagekar	 22101B0003	             Backend API, Jenkins
+
 Sahil Sakpal             22101B0008	             OCR Integration, Docker
+
 Tejas Shinde	 22101B0014	             CI/CD Pipeline, Frontend Vite + Docker
+
+
 
 
 
