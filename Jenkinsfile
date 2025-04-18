@@ -31,18 +31,6 @@ pipeline {
                     string(credentialsId: 'cloudinary_api_secret', variable: 'cloudinary_api_secret')
                 ]) {
                     echo 'Global credentials injected into environment variables.'
-
-                    // Debugging: print out loaded variables (for verification)
-                    echo "SECRET_KEY: ${SECRET_KEY}"
-                    echo "DB_NAME: ${DB_NAME}"
-                    echo "DB_USER: ${DB_USER}"
-                    echo "DB_PASSWORD: ${DB_PASSWORD}"
-                    echo "DB_HOST: ${DB_HOST}"
-                    echo "DB_PORT: ${DB_PORT}"
-                    echo "TOGETHER_API_KEY: ${TOGETHER_API_KEY}"
-                    echo "cloudinary_cloud_name: ${cloudinary_cloud_name}"
-                    echo "cloudinary_api_key: ${cloudinary_api_key}"
-                    echo "cloudinary_api_secret: ${cloudinary_api_secret}"
                 }
             }
         }
@@ -60,7 +48,13 @@ pipeline {
             steps {
                 dir("${BACKEND_DIR}") {
                     echo 'Running backend tests...'
-                    bat "\"${VENV_PATH}\\python.exe\" manage.py test"
+                    bat """
+                    set -a
+                    if exist .env (
+                        for /f "usebackq tokens=*" %%i in (`type .env`) do set %%i
+                    )
+                    "${VENV_PATH}\\python.exe" manage.py test
+                    """
                 }
             }
         }
