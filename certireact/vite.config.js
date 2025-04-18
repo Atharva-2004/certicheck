@@ -11,6 +11,11 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  test: {
+    environment: 'jsdom', // 👈 this is important
+    globals: true, // optional, allows using describe/it without importing
+    setupFiles: './src/setupTests.js', // optional setup
+  },
   server: {
     port: 3000,
     proxy: {
