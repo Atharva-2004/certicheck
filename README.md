@@ -1,4 +1,4 @@
-![codetoflow (1)](https://github.com/user-attachments/assets/b09ff496-8cb0-43d6-965b-74a3d50379c0)# 🛡️ CertiCheck - Smart Document Verification Platform
+🛡️ CertiCheck - Smart Document Verification Platform
 
 CertiCheck is an AI-powered, modular document verification system designed to automate identity and academic document validation, tailored specifically for Indian government-issued documents. It combines OCR, Vision-Language models (Together AI), and intelligent regex/NLP pipelines to extract structured data and validate documents like Aadhaar cards, PAN cards, GATE scorecards, academic mark sheets, and resumes.
 
@@ -78,16 +78,18 @@ docker-compose up -d --build
 Each credential (DB, Cloudinary, API keys) is stored securely in Jenkins and written to .env files dynamically before the build.
 
 ![image](https://github.com/user-attachments/assets/ca669963-7f9a-4927-90c2-43e359b46af2)
+
 ![image](https://github.com/user-attachments/assets/6b282987-801d-40e3-a7ac-013882970d6f)
+
 ![image](https://github.com/user-attachments/assets/24c0a7b1-f6c1-4572-9612-361918d6ebe5)
 
 
 👥 Team & Responsibilities
 
-Name	              Roll No	              Contribution
-Atharva Ajagekar	 22101B0003	 Backend API, Jenkins
-Sahil Sakpal       22101B0008	 OCR Integration, Docker
-Tejas Shinde	     22101B0014	 CI/CD Pipeline, Frontend Vite + Docker
+Name	              Roll No	                Contribution
+Atharva Ajagekar	 22101B0003	             Backend API, Jenkins
+Sahil Sakpal             22101B0008	             OCR Integration, Docker
+Tejas Shinde	 22101B0014	             CI/CD Pipeline, Frontend Vite + Docker
 
 
 
