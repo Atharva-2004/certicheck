@@ -49,11 +49,20 @@ pipeline {
       }
     }
 
-    stage('Install & Build') {
+    stage('Install & Build frontend') {
       steps {
         dir('certireact') {
           bat 'pnpm install'
           bat 'pnpm run build'
+        }
+      }
+    }
+
+    stage('Install & Build backend') {
+      steps {
+        dir('certidrf') {
+          bat 'pip install -r requirements.txt'
+        
         }
       }
     }
