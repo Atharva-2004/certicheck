@@ -70,7 +70,7 @@ pipeline {
     stage('Test') {
       steps {
         dir('certidrf') {
-          bat 'pytest || echo "Backend tests failed"'
+          bat 'pytest tests || echo "Backend tests failed"'
         }
         dir('certireact') {
           bat 'pnpm test || echo "Frontend tests failed"'
