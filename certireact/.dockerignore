@@ -1,0 +1,9 @@
+# Prevent large or unnecessary files from being copied into Docker image
+
+node_modules
+dist
+.vscode
+.env
+Dockerfile
+.dockerignore
+*.log

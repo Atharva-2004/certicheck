@@ -3,7 +3,7 @@ import together
 import os
 import re
 import numpy as np
-import cv2
+#import cv2
 from rest_framework.decorators import api_view, parser_classes
 from django.contrib.auth.decorators import login_required
 from rest_framework.parsers import MultiPartParser, FormParser

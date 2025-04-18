@@ -1,0 +1,39 @@
+
+
+services:
+  frontend:
+    build:
+      context: ./certireact
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./certireact:/app
+      - /app/node_modules
+    environment:
+      - VITE_API_URL=http://localhost:8000
+
+  backend:
+    build:
+      context: ./certidrf
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./certidrf:/app
+    env_file:
+      - ./certidrf/.env
+    depends_on:
+      - db
+
+  db:
+    image: postgres:15
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
