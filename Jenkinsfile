@@ -4,7 +4,7 @@ pipeline {
     environment {
         BACKEND_DIR = 'certidrf'
         FRONTEND_DIR = 'certireact'
-        VENV_PATH = 'C:\\Users\\niran\\Desktop\\certicheck react+drf\\certidrf\\.venv\\Scripts'
+        VENV_DIR = "${WORKSPACE}\\.venv"  // Create a virtual environment in Jenkins workspace
     }
 
     stages {
@@ -12,24 +12,6 @@ pipeline {
             steps {
                 script {
                     echo 'Setting up environment...'
-                }
-            }
-        }
-
-    stage('Install Frontend Dependencies') {
-            steps {
-                dir("${FRONTEND_DIR}") {
-                    echo 'Installing frontend dependencies...'
-                    bat 'npm install'
-                }
-            }
-        }
-
-        stage('Build Frontend') {
-            steps {
-                dir("${FRONTEND_DIR}") {
-                    echo 'Building frontend...'
-                    bat 'npm run build'
                 }
             }
         }
@@ -53,11 +35,20 @@ pipeline {
             }
         }
 
+        stage('Create Virtual Environment') {
+            steps {
+                script {
+                    echo 'Creating a virtual environment...'
+                    bat "python -m venv ${VENV_DIR}"  // Create the virtual environment in Jenkins workspace
+                }
+            }
+        }
+
         stage('Install Backend Dependencies') {
             steps {
                 dir("${BACKEND_DIR}") {
                     echo 'Installing backend dependencies...'
-                    bat "\"${VENV_PATH}\\python.exe\" -m pip install -r requirements.txt"
+                    bat "\"${VENV_DIR}\\Scripts\\python.exe\" -m pip install -r requirements.txt"  // Use the newly created virtual environment
                 }
             }
         }
@@ -66,18 +57,28 @@ pipeline {
             steps {
                 dir("${BACKEND_DIR}") {
                     echo 'Running backend tests...'
-                    bat """
-                    set -a
-                    if exist .env (
-                        for /f "usebackq tokens=*" %%i in (`type .env`) do set %%i
-                    )
-                    "${VENV_PATH}\\python.exe" manage.py test
-                    """
+                    bat "\"${VENV_DIR}\\Scripts\\python.exe\" manage.py test"  // Run tests with the virtual environment
                 }
             }
         }
 
-        
+        stage('Install Frontend Dependencies') {
+            steps {
+                dir("${FRONTEND_DIR}") {
+                    echo 'Installing frontend dependencies...'
+                    bat 'npm install'
+                }
+            }
+        }
+
+        stage('Build Frontend') {
+            steps {
+                dir("${FRONTEND_DIR}") {
+                    echo 'Building frontend...'
+                    bat 'npm run build'
+                }
+            }
+        }
 
         stage('Deploy') {
             steps {
