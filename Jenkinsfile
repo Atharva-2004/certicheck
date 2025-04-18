@@ -4,7 +4,7 @@ pipeline {
     environment {
         BACKEND_DIR = 'certidrf'
         FRONTEND_DIR = 'certireact'
-        VENV_PATH = 'C:\\Users\\niran\\Desktop\\certicheck react+drf\\certidrf\\.venv\\Scripts'  // Double backslashes for Windows
+        VENV_PATH = 'C:\\Users\\niran\\Desktop\\certicheck react+drf\\certidrf\\.venv\\Scripts'
     }
 
     stages {
@@ -12,6 +12,21 @@ pipeline {
             steps {
                 script {
                     echo 'Setting up environment...'
+                }
+            }
+        }
+
+        stage('Inject .env from Jenkins') {
+            steps {
+                withCredentials([file(credentialsId: 'env_file', variable: 'ENV_FILE')]) {
+                    dir("${BACKEND_DIR}") {
+                        echo 'Injecting environment variables from .env file...'
+                        bat """
+                        for /f "usebackq delims=" %%a in ("%ENV_FILE%") do (
+                            set "%%a"
+                        )
+                        """
+                    }
                 }
             }
         }
@@ -56,7 +71,7 @@ pipeline {
             steps {
                 script {
                     echo 'Deploying application...'
-                    // Add deployment steps here
+                    // Add actual deployment steps here
                 }
             }
         }
