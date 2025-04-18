@@ -23,7 +23,8 @@ ENV VITE_BASE_URL=http://localhost:8000
 RUN pnpm run build
 
 # Install `serve` to serve the production build
-RUN pnpm add -g serve
+RUN npm install -g serve
+
 
 # Expose port
 EXPOSE 3000
