@@ -131,6 +131,9 @@ const MainPage = () => {
       alert('Organization and organization email are required for recruiters');
       return false;
     }
+    if (registerData.role === 'recruiter'){
+      registerData.email = registerData.organization_email;
+    }
 
     return true;
   };
@@ -141,6 +144,7 @@ const MainPage = () => {
 
     try {
       const response = await axios.post('http://127.0.0.1:8000/api/v1/auth/register', registerData);
+      console.log(response)
       if (response.status === 201) {
         alert('Registration successful! Please login.');
         setIsLogin(true);

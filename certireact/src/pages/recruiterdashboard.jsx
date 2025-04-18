@@ -578,7 +578,14 @@ const RecruiterDashboard = () => {
               <div className="col-span-2">
                 <p className="text-sm text-gray-500">Address</p>
                 <p className="font-medium">{selectedApplication.aadhaar_address}</p>
-              </div>
+                <a 
+                  href={selectedApplication.aadhaar_image_url} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="text-blue-500 underline"
+                >
+                  View Aadhar Image
+                </a>              </div>
             </div>
           </div>
 
