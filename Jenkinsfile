@@ -4,7 +4,7 @@ pipeline {
     environment {
         BACKEND_DIR = 'certidrf'
         FRONTEND_DIR = 'certireact'
-        PYTHON_PATH = 'C:\\Users\\niran\\AppData\\Local\\Programs\\Python\\Python311'  // Adjusted Python path
+        VENV_PATH = 'C:\Users\niran\Desktop\certicheck react+drf\certidrf\.venv\Scripts'  // Adjusted to point to the virtual environment
     }
 
     stages {
@@ -20,7 +20,17 @@ pipeline {
             steps {
                 dir("${BACKEND_DIR}") {
                     echo 'Installing backend dependencies...'
-                    bat "${PYTHON_PATH}\\python -m pip install -r requirements.txt"
+                    bat "${VENV_PATH}\\python -m pip install -r requirements.txt"
+                }
+            }
+        }
+
+        stage('Load Environment Variables') {
+            steps {
+                dir("${BACKEND_DIR}") {
+                    echo 'Loading environment variables from .env file...'
+                    // Use python-dotenv to load the .env file
+                    bat "${VENV_PATH}\\python -m dotenv"
                 }
             }
         }
@@ -29,7 +39,7 @@ pipeline {
             steps {
                 dir("${BACKEND_DIR}") {
                     echo 'Running backend tests...'
-                    bat "${PYTHON_PATH}\\python manage.py test"
+                    bat "${VENV_PATH}\\python manage.py test"
                 }
             }
         }
