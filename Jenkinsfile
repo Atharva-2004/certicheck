@@ -19,7 +19,7 @@ pipeline {
             steps {
                 dir("${BACKEND_DIR}") {
                     echo 'Installing backend dependencies...'
-                    sh 'pip install -r requirements.txt'
+                    bat 'pip install -r requirements.txt'
                 }
             }
         }
@@ -28,7 +28,7 @@ pipeline {
             steps {
                 dir("${BACKEND_DIR}") {
                     echo 'Running backend tests...'
-                    sh 'python manage.py test'
+                    bat 'python manage.py test'
                 }
             }
         }
@@ -37,7 +37,7 @@ pipeline {
             steps {
                 dir("${FRONTEND_DIR}") {
                     echo 'Installing frontend dependencies...'
-                    sh 'npm install'
+                    bat 'npm install'
                 }
             }
         }
@@ -46,7 +46,7 @@ pipeline {
             steps {
                 dir("${FRONTEND_DIR}") {
                     echo 'Building frontend...'
-                    sh 'npm run build'
+                    bat 'npm run build'
                 }
             }
         }
