@@ -16,6 +16,24 @@ pipeline {
             }
         }
 
+    stage('Install Frontend Dependencies') {
+            steps {
+                dir("${FRONTEND_DIR}") {
+                    echo 'Installing frontend dependencies...'
+                    bat 'npm install'
+                }
+            }
+        }
+
+        stage('Build Frontend') {
+            steps {
+                dir("${FRONTEND_DIR}") {
+                    echo 'Building frontend...'
+                    bat 'npm run build'
+                }
+            }
+        }
+
         stage('Inject Global Jenkins Credentials') {
             steps {
                 withCredentials([
@@ -59,23 +77,7 @@ pipeline {
             }
         }
 
-        stage('Install Frontend Dependencies') {
-            steps {
-                dir("${FRONTEND_DIR}") {
-                    echo 'Installing frontend dependencies...'
-                    bat 'npm install'
-                }
-            }
-        }
-
-        stage('Build Frontend') {
-            steps {
-                dir("${FRONTEND_DIR}") {
-                    echo 'Building frontend...'
-                    bat 'npm run build'
-                }
-            }
-        }
+        
 
         stage('Deploy') {
             steps {
