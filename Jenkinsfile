@@ -16,17 +16,33 @@ pipeline {
             }
         }
 
-        stage('Inject .env from Jenkins') {
+        stage('Inject Global Jenkins Credentials') {
             steps {
-                withCredentials([file(credentialsId: 'env_file', variable: 'ENV_FILE')]) {
-                    dir("${BACKEND_DIR}") {
-                        echo 'Injecting environment variables from .env file...'
-                        bat """
-                        for /f "usebackq delims=" %%a in ("%ENV_FILE%") do (
-                            set "%%a"
-                        )
-                        """
-                    }
+                withCredentials([
+                    string(credentialsId: 'SECRET_KEY', variable: 'SECRET_KEY'),
+                    string(credentialsId: 'DB_NAME', variable: 'DB_NAME'),
+                    string(credentialsId: 'DB_USER', variable: 'DB_USER'),
+                    string(credentialsId: 'DB_PASSWORD', variable: 'DB_PASSWORD'),
+                    string(credentialsId: 'DB_HOST', variable: 'DB_HOST'),
+                    string(credentialsId: 'DB_PORT', variable: 'DB_PORT'),
+                    string(credentialsId: 'TOGETHER_API_KEY', variable: 'TOGETHER_API_KEY'),
+                    string(credentialsId: 'cloudinary_cloud_name', variable: 'cloudinary_cloud_name'),
+                    string(credentialsId: 'cloudinary_api_key', variable: 'cloudinary_api_key'),
+                    string(credentialsId: 'cloudinary_api_secret', variable: 'cloudinary_api_secret')
+                ]) {
+                    echo 'Global credentials injected into environment variables.'
+
+                    // Debugging: print out loaded variables (for verification)
+                    echo "SECRET_KEY: ${SECRET_KEY}"
+                    echo "DB_NAME: ${DB_NAME}"
+                    echo "DB_USER: ${DB_USER}"
+                    echo "DB_PASSWORD: ${DB_PASSWORD}"
+                    echo "DB_HOST: ${DB_HOST}"
+                    echo "DB_PORT: ${DB_PORT}"
+                    echo "TOGETHER_API_KEY: ${TOGETHER_API_KEY}"
+                    echo "cloudinary_cloud_name: ${cloudinary_cloud_name}"
+                    echo "cloudinary_api_key: ${cloudinary_api_key}"
+                    echo "cloudinary_api_secret: ${cloudinary_api_secret}"
                 }
             }
         }
