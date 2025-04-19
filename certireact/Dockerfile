@@ -1,7 +1,6 @@
-# Use official Node.js image
-FROM node:18
+# === Build Stage ===
+FROM node:18 AS builder
 
-# Set working directory
 WORKDIR /app
 
 # Install pnpm globally
@@ -9,22 +8,24 @@ RUN npm install -g pnpm
 
 # Copy dependency files first
 COPY package.json pnpm-lock.yaml ./
-
-# Install dependencies using pnpm
 RUN pnpm install
 
 # Copy the rest of your project
 COPY . .
 
-# Set environment variable
-ENV VITE_BASE_URL=http://localhost:8000
-
 # Build your frontend
 RUN pnpm run build
 
-# Install `serve` to serve the production build
+# === Production Stage ===
+FROM node:18
+
+WORKDIR /app
+
+# Install serve globally to serve the build
 RUN npm install -g serve
 
+# Copy the build output from the builder stage
+COPY --from=builder /app/dist ./dist
 
 # Expose port
 EXPOSE 3000
