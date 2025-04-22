@@ -177,7 +177,7 @@ const MainPage = () => {
           className="bg-white text-blue-600 px-6 py-2 rounded-md font-semibold hover:bg-blue-50 transition-all"
           onClick={() => setIsModalOpen(true)}
         >
-          Get Started
+          Lets Started
         </button>
       </div>
     </header>
