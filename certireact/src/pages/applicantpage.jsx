@@ -60,15 +60,37 @@ const ApplicantPage = () => {
         window.location.href = '/';
     };
 
-    const JobCard = ({ job, isApplied }) => (
-        <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="mb-4"
-        >
-            <Card className="p-6 hover:shadow-lg transition-shadow">
-                <div className="flex justify-between items-start">
+    const JobCard = ({ job, isApplied }) => {
+        const checkDeadline = () => {
+            const currentDate = new Date();
+            const closeDate = new Date(job.closeDate);
+            
+            if (closeDate < currentDate) {
+                alert('Application deadline has passed. This position is no longer accepting applications.');
+                return false;
+            }
+            return true;
+        };
+    
+        const handleApplyClick = () => {
+            if (checkDeadline()) {
+                navigate(`/apply-job/${job.id}`, {
+                    state: { jobId: job.id, userId: user.id }
+                });
+            }
+        };
+    
+        const isDeadlinePassed = new Date(job.closeDate) < new Date();
+    
+        return (
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="mb-4"
+            >
+                <Card className="p-6 hover:shadow-lg transition-shadow">
+                    <div className="flex justify-between items-start">
                     <div>
                         <h3 className="text-xl font-semibold">{job.jobTitle}</h3>
                         <p className="text-blue-600">{job.companyName}</p>
@@ -84,26 +106,29 @@ const ApplicantPage = () => {
                             </div>
                         </div>
                     </div>
-                    {!isApplied && (
-                    <Button 
-                        onClick={() => navigate(`/apply-job/${job.id}`, {
-                            state: { jobId: job.id, userId: user.id }
-                        })}
-                        className="bg-blue-600 hover:bg-blue-700"
-                    >
-                        Apply Now
-                    </Button>
-                )}
-                {isApplied && (
-                    <div className="bg-green-100 text-green-800 px-4 py-2 rounded-md">
-                        Already Applied
+                        {!isApplied && !isDeadlinePassed && (
+                            <Button 
+                                onClick={handleApplyClick}
+                                className="bg-blue-600 hover:bg-blue-700"
+                            >
+                                Apply Now
+                            </Button>
+                        )}
+                        {!isApplied && isDeadlinePassed && (
+                            <div className="bg-red-100 text-red-800 px-4 py-2 rounded-md">
+                                Deadline Passed
+                            </div>
+                        )}
+                        {isApplied && (
+                            <div className="bg-green-100 text-green-800 px-4 py-2 rounded-md">
+                                Already Applied
+                            </div>
+                        )}
                     </div>
-                )}
-            </div>
-        </Card>
-    </motion.div>
-
-    );
+                </Card>
+            </motion.div>
+        );
+    };
 
     return (
         <div className="min-h-screen bg-gray-50">

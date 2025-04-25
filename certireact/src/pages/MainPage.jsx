@@ -31,7 +31,9 @@ const MainPage = () => {
     organization_email: ''
   });
 
-  
+  const [isRecruiterEmailVerified, setIsRecruiterEmailVerified] = useState(false);
+  const [showRecruiterOTPInput, setShowRecruiterOTPInput] = useState(false);
+  const [recruiterOTP, setRecruiterOTP] = useState('');
 
   const commonFields = [
     { name: 'firstname', label: 'First Name', type: 'text' },
@@ -62,6 +64,78 @@ const MainPage = () => {
     }
   };
 
+  const handleSendOTP = async (email) => {
+    try {
+      const response = await axios.post('http://127.0.0.1:8000/api/v1/auth/send-verification-email', {
+        email: email
+      });
+      if (response.status === 200) {
+        if (registerData.role === 'applicant') {
+          setShowOTPInput(true);
+        } else {
+          setShowRecruiterOTPInput(true);
+        }
+        alert('OTP has been sent to your email');
+      }
+      if (response.status === 200 && registerData.role === 'recruiter') {
+        setShowRecruiterOTPInput(true);
+        // Extract domain and lookup organization
+        const domain = email.split('@')[1];
+        if (domain) {
+          try {
+            const orgName = await lookupOrganization(domain);
+            if (orgName) {
+              setRegisterData(prev => ({
+                ...prev,
+                organization: orgName
+              }));
+            } else {
+              // Fallback: Format domain name if API lookup fails
+              const formattedName = domain
+                .split('.')[0]
+                .split(/[-_]/)
+                .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+                .join(' ');
+              setRegisterData(prev => ({
+                ...prev,
+                organization: formattedName
+              }));
+            }
+          } catch (error) {
+            console.error('Error looking up organization:', error);
+          }
+        }
+      } else if (response.status === 200 && registerData.role === 'applicant') {
+        setShowOTPInput(true);
+      }
+
+      alert('OTP has been sent to your email');
+    
+    } catch (error) {
+      alert('Failed to send OTP: ' + (error.response?.data?.error || 'Unknown error'));
+    }
+  };
+  
+  const handleVerifyOTP = async (email, otpValue, isRecruiter = false) => {
+    try {
+      const response = await axios.post('http://127.0.0.1:8000/api/v1/auth/verify-otp', {
+        email: email,
+        otp: otpValue
+      });
+      if (response.status === 200) {
+        if (isRecruiter) {
+          setIsRecruiterEmailVerified(true);
+          setShowRecruiterOTPInput(false);
+        } else {
+          setIsEmailVerified(true);
+          setShowOTPInput(false);
+        }
+        alert('Email verified successfully!');
+      }
+    } catch (error) {
+      alert('Invalid OTP');
+    }
+  };
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -105,13 +179,75 @@ const MainPage = () => {
     }));
   };
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setRegisterData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
+  // Add this helper function at the top of your component
+const getOrganizationFromEmail = async (email) => {
+  try {
+    const domain = email.split('@')[1];
+    if (!domain) return null;
+
+    // Remove common TLDs and get organization name
+    const orgName = domain
+      .split('.') // Split by dots
+      .slice(0, -1) // Remove TLD (edu, com, etc)
+      .join(' ') // Join remaining parts
+      .split('-') // Split by dashes
+      .join(' ') // Join with spaces
+      .split('_') // Split by underscores
+      .join(' ') // Join with spaces
+      .replace(/([a-z])([A-Z])/g, '$1 $2') // Add space between camelCase
+      .replace(/\b\w/g, c => c.toUpperCase()); // Capitalize first letter of each word
+
+    return orgName;
+  } catch (error) {
+    console.error('Error extracting organization name:', error);
+    return null;
+  }
+};
+
+// Update the handleInputChange function
+const handleInputChange = async (e) => {
+  const { name, value } = e.target;
+  setRegisterData(prev => ({
+    ...prev,
+    [name]: value
+  }));
+
+  // If organization email is changed and role is recruiter
+  if (name === 'organization_email' && registerData.role === 'recruiter') {
+    try {
+      const domain = value.split('@')[1];
+      if (domain) {
+        // Use lookupOrganization to get company name
+        const orgName = await lookupOrganization(domain);
+        if (orgName) {
+          setRegisterData(prev => ({
+            ...prev,
+            organization: orgName
+          }));
+        }
+      }
+    } catch (error) {
+      console.error('Error detecting organization:', error);
+    }
+  }
+};
+
+// Optionally, add a more comprehensive organization lookup
+const lookupOrganization = async (domain) => {
+  try {
+    const response = await axios.get(`https://autocomplete.clearbit.com/v1/companies/suggest?query=${domain}`);
+    
+    if (response.data && response.data.length > 0) {
+      return response.data[0].name;
+    }
+    return null;
+  } catch (error) {
+    console.error('Error looking up organization:', error);
+    return null;
+  }
+};
+
+// Update the organization email input field in your JSX
 
   const validateForm = () => {
     const requiredFields = ['firstname', 'lastname', 'username', 'password', 'gender', 'phone_number', 'role'];
@@ -142,6 +278,10 @@ const MainPage = () => {
     e.preventDefault();
     if (!validateForm()) return;
 
+    if (registerData.role === 'applicant' && !isEmailVerified) {
+      alert('Please verify your email first');
+      return;
+    }
     try {
       const response = await axios.post('http://127.0.0.1:8000/api/v1/auth/register', registerData);
       console.log(response)
@@ -223,8 +363,6 @@ const MainPage = () => {
             </div>
           </div>
 
-          {/* Job Listings Section */}
-          {/* Job Listings Section */}
 <div className="lg:col-span-2 space-y-6">
   <h2 className="text-2xl font-bold mb-6">Latest Job Opportunities</h2>
   {jobs.length === 0 ? (
@@ -370,43 +508,133 @@ const MainPage = () => {
                     </div>
                     </div>
                   {registerData.role === 'applicant' && (
-                    <div className="form-group">
-                      <label>Email</label>
-                      <input
-                        type="email"
-                        name="email"
-                        value={registerData.email}
-                        onChange={handleInputChange}
-                        required
-                      />
-                    </div>
-                  )}
+  <div className="space-y-4">
+    <div className="form-group">
+      <label>Email</label>
+      <div className="flex gap-2">
+        <input
+          type="email"
+          name="email"
+          value={registerData.email}
+          onChange={handleInputChange}
+          required
+          className="flex-1"
+        />
+        <button
+          type="button"
+          onClick={() => handleSendOTP(registerData.email)}
+          className="bg-blue-500 text-white px-4 py-2 rounded"
+          disabled={!registerData.email || isEmailVerified}
+        >
+          {isEmailVerified ? 'Verified' : 'Verify Email'}
+        </button>
+      </div>
+    </div>
+    {showOTPInput && !isEmailVerified && (
+      <div className="form-group">
+        <label>Enter OTP</label>
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={otp}
+            onChange={(e) => setOtp(e.target.value)}
+            placeholder="Enter 6-digit OTP"
+            className="flex-1"
+            maxLength={6}
+          />
+          <button
+            type="button"
+            onClick={handleVerifyOTP}
+            className="bg-green-500 text-white px-4 py-2 rounded"
+          >
+            Verify OTP
+          </button>
+        </div>
+      </div>
+    )}
+  </div>
+)}
 
-                  {registerData.role === 'recruiter' && (
-                    <>
-                      <div className="form-group">
-                        <label>Organization</label>
-                        <input
-                          type="text"
-                          name="organization"
-                          value={registerData.organization}
-                          onChange={handleInputChange}
-                          required
-                        />
-                      </div>
-                      <div className="form-group">
-                        <label>Organization Email</label>
-                        <input
-                          type="email"
-                          name="organization_email"
-                          value={registerData.organization_email}
-                          onChange={handleInputChange}
-                          required
-                        />
-                      </div>
-                    </>
-                  )}
+{registerData.role === 'recruiter' && (
+  <>
+    <div className="form-group">
+      <label>Organization Email</label>
+      <div className="flex gap-2">
+        <input
+          type="email"
+          name="organization_email"
+          value={registerData.organization_email}
+          onChange={handleInputChange}
+          required
+          className="flex-1"
+          placeholder="organization@domain.com"
+        />
+        <button
+          type="button"
+          onClick={() => handleSendOTP(registerData.organization_email)}
+          className="bg-blue-500 text-white px-4 py-2 rounded"
+          disabled={!registerData.organization_email || isRecruiterEmailVerified}
+        >
+          {isRecruiterEmailVerified ? 'Verified' : 'Verify Email'}
+        </button>
+      </div>
+      <small className="text-gray-500 mt-1">
+        Enter your organization email to auto-detect organization name
+      </small>
+    </div>
 
+    <div className="form-group">
+      <label>Organization Name</label>
+      <input
+        type="text"
+        name="organization"
+        value={registerData.organization}
+        onChange={handleInputChange}
+        required
+        className="w-full bg-gray-50"
+        placeholder="Auto-detected from email"
+        readOnly={!!registerData.organization_email}
+      />
+      {registerData.organization && (
+        <small className="text-green-600 mt-1">
+          ✓ Organization detected from email domain
+        </small>
+      )}
+    </div>
+
+    {showRecruiterOTPInput && !isRecruiterEmailVerified && (
+      <div className="form-group">
+        <label>Enter OTP</label>
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={recruiterOTP}
+            onChange={(e) => setRecruiterOTP(e.target.value)}
+            placeholder="Enter 6-digit OTP"
+            className="flex-1"
+            maxLength={6}
+          />
+          <button
+            type="button"
+            onClick={() => handleVerifyOTP(registerData.organization_email, recruiterOTP, true)}
+            className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition-colors"
+          >
+            Verify OTP
+          </button>
+        </div>
+        <small className="text-gray-500 mt-1">
+          Please check your email for the verification code
+        </small>
+      </div>
+    )}
+
+    {isRecruiterEmailVerified && (
+      <div className="p-3 bg-green-50 text-green-700 rounded-md mb-4">
+        ✓ Email verification completed successfully
+      </div>
+    )}
+  </>
+)}
                   <button type="submit" className="button button-primary">
                     Create Account
                   </button>
