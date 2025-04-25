@@ -7,6 +7,7 @@ from .models import Job, JobApplication
 from .serializers import JobSerializer, JobApplicationSerializer
 from rest_framework.parsers import MultiPartParser, FormParser
 import cloudinary.uploader
+from django.utils import timezone 
 
 
 @api_view(["POST"])
@@ -83,49 +84,81 @@ def apply_for_job(request, job_id):
     if request.user.role != 'applicant':
         return Response({'message': 'Only applicants can apply to jobs.'}, status=status.HTTP_403_FORBIDDEN)
     
-    required_docs = job.required_documents
     data = request.data
-
-    # Parse nested JSON from 'data' key if it exists and is a string
-    if 'data' in data:
-        try:
-            if isinstance(data['data'], str):
-                parsed_data = json.loads(data['data'])  # Parse the JSON string
-            else:
-                parsed_data = data['data']
-        except (KeyError, json.JSONDecodeError):
-            return Response({"error": "Invalid data format"}, status=status.HTTP_400_BAD_REQUEST)
-    else:
-        parsed_data = data
-
-    # Debug logging to inspect parsed data
-    print("Parsed Data:", parsed_data)
-
-    # Validate uploaded document fields
-    for doc, fields in required_docs.items():
-        for field in fields:
-            if field not in parsed_data and field not in request.FILES:
-                return Response({"error": f"{field} is required for {doc}"}, status=status.HTTP_400_BAD_REQUEST)
-            
-    # 3. Handle file uploads to Cloudinary and store in correct keys
-    for file_field in request.FILES:
-        uploaded_file = request.FILES[file_field]
-        try:
-            upload_result = cloudinary.uploader.upload(uploaded_file)
-            # Map uploaded file URL to the corresponding field in parsed_data
-            parsed_data[file_field + '_url'] = upload_result.get('secure_url')
-        except Exception as e:
-            return Response({"error": f"Upload failed for {file_field}: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
-    # Explicitly assign the applicant and job
-    parsed_data["job"] = job_id
-    serializer = JobApplicationSerializer(data=parsed_data)
-
-    if serializer.is_valid():
-        serializer.save(applicant=request.user)  # Assign the applicant explicitly
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
     
+    # Parse nested JSON from 'data' key
+    try:
+        parsed_data = json.loads(data['data']) if isinstance(data.get('data'), str) else data.get('data', {})
+    except (KeyError, json.JSONDecodeError):
+        return Response({"error": "Invalid data format"}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Debug logging
+    print("Parsed Data:", parsed_data)
+    print("Files:", request.FILES)
+
+    # Define file field mappings
+    file_field_mappings = {
+        'aadhaar_image': 'aadhaar_image_url',
+        'pan_image': 'pan_image_url',
+        'marks_10th_image': 'marks_10th_image_url',
+        'marks_12th_image': 'marks_12th_image_url',
+        'gate_image': 'gate_image_url',
+        'resume_file': 'resume_url'
+    }
+
+    # Handle file uploads to Cloudinary
+    for file_field, url_field in file_field_mappings.items():
+        if file_field in request.FILES:
+            try:
+                uploaded_file = request.FILES[file_field]
+                upload_result = cloudinary.uploader.upload(
+                    uploaded_file,
+                    folder="certicheck/documents/",
+                    resource_type="auto",
+                    allowed_formats=['pdf', 'png', 'jpg', 'jpeg'],
+                    max_length=10 * 1024 * 1024  # 10MB limit
+                )
+                parsed_data[url_field] = upload_result['secure_url']
+                print(f"Uploaded {file_field} to: {parsed_data[url_field]}")
+            except Exception as e:
+                print(f"Error uploading {file_field}: {str(e)}")
+                return Response(
+                    {"error": f"Upload failed for {file_field}: {str(e)}"},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+
+    # Add application metadata
+    parsed_data.update({
+        "job": job_id,
+        "application_date": timezone.now(),
+        "status": "pending",
+        "verification_status": parsed_data.get('verification_status', {})
+    })
+
+    # Validate and save application
+    serializer = JobApplicationSerializer(data=parsed_data)
+    if serializer.is_valid():
+        try:
+            application = serializer.save(applicant=request.user)
+            return Response({
+                "message": "Application submitted successfully",
+                "application_id": application.id,
+                
+                "job_id": job_id,
+                "document_urls": {
+                    field: parsed_data.get(url_field)
+                    for field, url_field in file_field_mappings.items()
+                    if url_field in parsed_data
+                }
+            }, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            print(f"Error saving application: {str(e)}")
+            return Response(
+                {"error": "Failed to save application"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+    
+    print("Serializer errors:", serializer.errors)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # 📜 List job applications (Recruiter only)

@@ -36,7 +36,8 @@ const LandingPage = () => {
   const navigate = useNavigate();
   const { jobId, userId } = location.state || {};
   const savedData = getFromLocalStorage(userId, jobId);
-
+  const [isSubmitting, setIsSubmitting] = useState(false);
+const [uploadProgress, setUploadProgress] = useState(0);
   const [verificationStatus, setVerificationStatus] = useState(
     savedData?.verificationStatus || {
       aadhar: false,
@@ -144,7 +145,11 @@ const LandingPage = () => {
     }));
   };
 
-  const handleSubmitApplication = async () => {
+  // First, add these state variables at the top of your component
+
+
+// Then update the handleSubmitApplication function
+const handleSubmitApplication = async () => {
     try {
         const token = localStorage.getItem('token');
         if (!token) {
@@ -153,78 +158,103 @@ const LandingPage = () => {
             return;
         }
 
-        // Validate resume fields
-        if (!formData.resume.fullName || !formData.resume.skills || 
-            !formData.resume.experience || !formData.resume.contactInfo) {
-            alert('Please fill all resume fields');
+        // Validate all required documents are verified
+        const unverifiedDocs = Object.entries(verificationStatus)
+            .filter(([key]) => key !== 'resume')
+            .filter(([_, status]) => status !== true);
+
+        if (unverifiedDocs.length > 0) {
+            alert(`Please verify these documents first: ${unverifiedDocs.map(([doc]) => doc.toUpperCase()).join(', ')}`);
             return;
         }
 
+        setIsSubmitting(true);
         const formDataToSend = new FormData();
 
-        // Add document files
-        if (formData.aadhar.document) {
-            formDataToSend.append('aadhaar_image', formData.aadhar.document);
-        }
-        if (formData.pan.document) {
-            formDataToSend.append('pan_image', formData.pan.document);
-        }
-        if (formData.marksheet10.document) {
-            formDataToSend.append('marks_10th_image', formData.marksheet10.document);
-        }
-        if (formData.marksheet12.document) {
-            formDataToSend.append('marks_12th_image', formData.marksheet12.document);
-        }
-        if (formData.gate.document) {
-            formDataToSend.append('gate_image', formData.gate.document);
-        }
-        if (formData.resume.document) {
-            formDataToSend.append('resume_file', formData.resume.document);
+        // Document files with validation
+        const fileUploads = {
+            aadhar: { field: 'aadhaar_image', types: ['image/jpeg', 'image/png', 'application/pdf'] },
+            pan: { field: 'pan_image', types: ['image/jpeg', 'image/png', 'application/pdf'] },
+            marksheet10: { field: 'marks_10th_image', types: ['image/jpeg', 'image/png', 'application/pdf'] },
+            marksheet12: { field: 'marks_12th_image', types: ['image/jpeg', 'image/png', 'application/pdf'] },
+            gate: { field: 'gate_image', types: ['image/jpeg', 'image/png', 'application/pdf'] },
+            resume: { field: 'resume_file', types: ['image/jpeg'] }
+        };
+
+        // Validate and append files
+        for (const [section, config] of Object.entries(fileUploads)) {
+            const file = formData[section].document;
+            if (!file) {
+                alert(`Please upload ${section} document`);
+                setIsSubmitting(false);
+                return;
+            }
+            if (!config.types.includes(file.type)) {
+                alert(`Invalid file type for ${section}. Allowed types: ${config.types.join(', ')}`);
+                setIsSubmitting(false);
+                return;
+            }
+            if (file.size > 5 * 1024 * 1024) { // 5MB limit
+                alert(`File size too large for ${section}. Maximum size: 5MB`);
+                setIsSubmitting(false);
+                return;
+            }
+            formDataToSend.append(config.field, file);
         }
 
-        // Create flat structure matching backend expectations
+        // Comprehensive application data
         const applicationData = {
             job: jobId,
-            resume_name: formData.resume.fullName,
-            // Resume fields
-            resume_skills: formData.resume.skills,
-            resume_experience: formData.resume.experience,
-            resume_contact_info: formData.resume.contactInfo,
-            // Aadhar fields
+            application_date: new Date().toISOString(),
+            verification_status: verificationStatus,
+            
+            // Aadhar Information
             aadhaar_number: formData.aadhar.aadharNumber,
             aadhaar_name: formData.aadhar.fullName,
             aadhaar_dob: formData.aadhar.dateOfBirth,
             aadhaar_address: formData.aadhar.address,
             aadhaar_mobile: formData.aadhar.mobileNumber,
-            // PAN fields
+            
+            // PAN Information
             pan_number: formData.pan.panNumber,
             pan_name: formData.pan.fullName,
             pan_dob: formData.pan.dateOfBirth,
             pan_father_name: formData.pan.fatherName,
-            // 10th fields
+            
+            // 10th Marksheet Information
             marks_10th_name: formData.marksheet10.fullName,
             marks_10th_roll_number: formData.marksheet10.rollNumber,
             marks_10th_percentage: formData.marksheet10.percentage,
             marks_10th_board: formData.marksheet10.board,
-            // 12th fields
+            
+            // 12th Marksheet Information
             marks_12th_name: formData.marksheet12.fullName,
             marks_12th_roll_number: formData.marksheet12.rollNumber,
             marks_12th_percentage: formData.marksheet12.percentage,
             marks_12th_board: formData.marksheet12.board,
-            // GATE fields
+            
+            // GATE Information
             gate_name: formData.gate.fullName,
             gate_reg_number: formData.gate.registrationNumber,
             gate_score: formData.gate.gateScore,
             gate_air: formData.gate.air,
-            // Verification status
-            verification_status: verificationStatus
+            
+            // Resume Information
+            resume_name: formData.resume.fullName,
+            resume_skills: formData.resume.skills,
+            resume_experience: formData.resume.experience,
+            resume_contact_info: formData.resume.contactInfo,
+
+            // Additional metadata
+            application_status: 'pending',
+            submission_timestamp: new Date().toISOString(),
+            is_complete: calculateProgress() === 100
         };
 
-        // Add JSON data
+        // Append the JSON data
         formDataToSend.append('data', JSON.stringify(applicationData));
 
-        console.log('Sending application data:', applicationData);
-
+        // Submit the application
         const response = await axios.post(
             `http://127.0.0.1:8000/api/v1/jobs/${jobId}/apply/`,
             formDataToSend,
@@ -232,6 +262,12 @@ const LandingPage = () => {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'multipart/form-data'
+                },
+                onUploadProgress: (progressEvent) => {
+                    const percentCompleted = Math.round(
+                        (progressEvent.loaded * 100) / progressEvent.total
+                    );
+                    setUploadProgress(percentCompleted);
                 }
             }
         );
@@ -242,11 +278,27 @@ const LandingPage = () => {
             navigate('/applicantpage');
         }
     } catch (error) {
-        console.error('Error submitting application:', error.response?.data);
-        const errorMessage = error.response?.data?.error || 'Please try again.';
-        alert(`Error submitting application: ${errorMessage}`);
+        console.error('Error submitting application:', error);
+        let errorMessage = 'Failed to submit application. ';
+        
+        if (error.response?.data?.error) {
+            errorMessage += error.response.data.error;
+        } else if (error.response?.status === 413) {
+            errorMessage += 'Files too large. Please reduce file sizes.';
+        } else if (error.response?.status === 415) {
+            errorMessage += 'Invalid file type submitted.';
+        } else {
+            errorMessage += 'Please try again later.';
+        }
+        
+        alert(errorMessage);
+    } finally {
+        setIsSubmitting(false);
+        setUploadProgress(0);
     }
 };
+
+
   const handleFileChange = (section, e) => {
     setFormData(prev => ({
       ...prev,
@@ -309,29 +361,87 @@ const LandingPage = () => {
       const mismatchedFields = [];
       console.log('Important Data:', important_data);
   
-      switch (docType) {
-        case 'Aadhaar Card':
-          if (important_data.Name !== formData[section].fullName) {
-            isVerified = false;
-            mismatchedFields.push('Full Name');
-          }
-          if (important_data['Aadhaar Number']?.replace(/\s/g, '') !== formData[section].aadharNumber) {
-            isVerified = false;
-            mismatchedFields.push('Aadhaar Number');
-          }
-          break;
+      // Helper function to standardize date format
+// Helper function to standardize date format
+const formatDate = (dateString) => {
+  try {
+    if (!dateString) return null;
+
+    // Handle dd/mm/yyyy format from OCR
+    if (typeof dateString === 'string' && dateString.includes('/')) {
+      const [day, month, year] = dateString.split('/');
+      return `${day}-${month}-${year}`;
+    }
+
+    // Handle yyyy-mm-dd format from input type="date"
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) {
+      throw new Error('Invalid date');
+    }
+
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    
+    return `${day}-${month}-${year}`;
+  } catch (error) {
+    console.error('Date formatting error:', error);
+    return null;
+  }
+};
+
+switch (docType) {
+  case 'Aadhaar Card':
+  if (important_data.Name !== formData[section].fullName) {
+    isVerified = false;
+    mismatchedFields.push('Full Name');
+  }
+  if (important_data['Aadhaar Number']?.replace(/\s/g, '') !== formData[section].aadharNumber) {
+    isVerified = false;
+    mismatchedFields.push('Aadhaar Number');
+  }
+  // Updated DOB verification with strict checking
+  if (important_data['DOB']) {
+    const docDOB = formatDate(important_data['DOB']);
+    const formDOB = formatDate(formData[section].dateOfBirth);
+    
+    if (!docDOB || !formDOB) {
+      isVerified = false;
+      mismatchedFields.push('Date of Birth (Invalid format)');
+    } else if (docDOB !== formDOB) {
+      isVerified = false;
+      mismatchedFields.push('Date of Birth (Mismatch)');
+      console.log('DOB Mismatch:', { docDOB, formDOB });
+    }
+  }
+  break;
+// Update the DOB verification in the switch statement
+case 'PAN Card':
+  if (important_data.Name?.toLowerCase() !== formData[section].fullName.toLowerCase()) {
+    isVerified = false;
+    mismatchedFields.push('Full Name');
+  }
+  if (important_data['PAN Number'] !== formData[section].panNumber) {
+    isVerified = false;
+    mismatchedFields.push('PAN Number');
+  }
+  // Updated DOB verification for PAN with better format handling
+  if (important_data['DOB']) {
+    const docDOB = formatDate(important_data['DOB']);
+    const formDOB = formatDate(formData[section].dateOfBirth);
+    
+    console.log('Comparing dates:', { docDOB, formDOB }); // Debug log
+    
+    if (!docDOB || !formDOB) {
+      isVerified = false;
+      mismatchedFields.push('Date of Birth (Invalid format)');
+    } else if (docDOB !== formDOB) {
+      isVerified = false;
+      mismatchedFields.push('Date of Birth (Mismatch)');
+    }
+  }
   
-        case 'PAN Card':
-          if (important_data.Name?.toLowerCase() !== formData[section].fullName.toLowerCase()) {
-            isVerified = false;
-            mismatchedFields.push('Full Name');
-          }
-          if (important_data['PAN Number'] !== formData[section].panNumber) {
-            isVerified = false;
-            mismatchedFields.push('PAN Number');
-          }
-          break;
-  
+  break;
         case '10th Marksheet':
         case '12th Marksheet':
           if (important_data.Name?.toLowerCase() !== formData[section].fullName.toLowerCase()) {

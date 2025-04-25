@@ -554,7 +554,7 @@ const RecruiterDashboard = () => {
 
 {selectedApplication && (
   <Dialog open={!!selectedApplication} onOpenChange={() => setSelectedApplication(null)}>
-    <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+    <DialogContent className="fixed top-0 left-0 max-w-4xl max-h-[90vh] overflow-y-auto ">
       <DialogHeader>
         <DialogTitle>Application Details</DialogTitle>
         <DialogDescription>
@@ -597,6 +597,7 @@ const RecruiterDashboard = () => {
               <div className="grid grid-cols-2 gap-4 p-4 bg-white rounded">
                 <div className="col-span-2">
                   <h4 className="font-medium">10th Standard</h4>
+                  
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Board</p>
@@ -606,6 +607,14 @@ const RecruiterDashboard = () => {
                   <p className="text-sm text-gray-500">Percentage</p>
                   <p className="font-medium">{selectedApplication.marks_10th_percentage}%</p>
                 </div>
+                <a 
+                  href={selectedApplication.marks_10th_image_url} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="text-blue-500 underline"
+                >
+                  View Marksheet Image
+                </a>
               </div>
               <div className="grid grid-cols-2 gap-4 p-4 bg-white rounded">
                 <div className="col-span-2">
@@ -619,6 +628,14 @@ const RecruiterDashboard = () => {
                   <p className="text-sm text-gray-500">Percentage</p>
                   <p className="font-medium">{selectedApplication.marks_12th_percentage}%</p>
                 </div>
+                <a 
+                  href={selectedApplication.marks_12th_image_url} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="text-blue-500 underline"
+                >
+                  View Marksheet Image
+                </a>
               </div>
 
               <div className="grid grid-cols-2 gap-4 p-4 bg-white rounded">
@@ -637,6 +654,14 @@ const RecruiterDashboard = () => {
                   <p className="text-sm text-gray-500">AIR</p>
                   <p className="font-medium">{selectedApplication.gate_air}</p>
                 </div>
+                <a 
+                  href={selectedApplication.gate_image_url} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="text-blue-500 underline"
+                >
+                  View GateScoreCard Image
+                </a>
               </div>
             </div>
           </div>
@@ -655,6 +680,14 @@ const RecruiterDashboard = () => {
                 <p className="text-sm text-gray-500">Experience</p>
                 <p className="font-medium">{selectedApplication.resume_experience}</p>
               </div>
+              <a 
+                  href={selectedApplication.resume_url} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="text-blue-500 underline"
+                >
+                  View Resume Image
+                </a>
             </div>
           </div>
         </div>
